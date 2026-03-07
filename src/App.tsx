@@ -21,7 +21,13 @@ export default function App() {
 
   // --- LÓGICA DE BLOQUEO ---
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const PIN_CORRECTO = '1234'; // <--- Cambia aquí el PIN si lo deseas
+  const PIN_CORRECTO = '1234'; 
+
+  // --- CONSTANTES PARA PROYECCIÓN ---
+  const NUM_PADRES = 38;
+  const CUOTA_MENSUAL = 50000;
+  const VALOR_MERIENDA = 8000;
+  const MESES_PROMO = 22; // De Enero 2026 a Octubre 2027
 
   const manejarCambioTab = (nuevoTab) => {
     if ((nuevoTab === 'gastos' || nuevoTab === 'presupuesto') && !isUnlocked) {
@@ -201,7 +207,8 @@ export default function App() {
           {id: 'libro', label: 'Libro'},
           {id: 'gastos', label: 'Gastos'},
           {id: 'estudiantes', label: 'Aportes'},
-          {id: 'presupuesto', label: 'Presupuesto'}
+          {id: 'presupuesto', label: 'Presupuesto'},
+          {id: 'proyeccion', label: 'Proyección 📈'}
         ].map((item) => (
           <button
             key={item.id}
@@ -269,7 +276,7 @@ export default function App() {
           </form>
         )}
 
-        {tab === 'gastos' && (
+        {tab === 'gastos' && isUnlocked && (
           <form onSubmit={handleSubmitGasto} className="space-y-4 bg-white p-6 rounded-2xl shadow-lg border-t-4 border-red-600 mt-2 max-w-md mx-auto">
             <h2 className="text-lg font-black text-red-900 uppercase italic">Registrar Egreso</h2>
             <input type="date" className="w-full p-3 border rounded-xl" value={formData.fecha} onChange={e=>setFormData({...formData, fecha: e.target.value})} />
@@ -424,7 +431,7 @@ export default function App() {
           </div>
         )}
 
-        {tab === 'presupuesto' && (
+        {tab === 'presupuesto' && isUnlocked && (
           <div className="space-y-6 mt-2 animate-fadeIn max-w-md mx-auto">
             <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
               <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic">Planificar Gasto (Nuevo Item)</h2>
@@ -520,6 +527,48 @@ export default function App() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* --- NUEVA TAB PROYECCIÓN (SIN PIN) --- */}
+        {tab === 'proyeccion' && (
+          <div className="space-y-6 mt-2 max-w-md mx-auto animate-fadeIn">
+            <div className="bg-gradient-to-br from-indigo-600 to-blue-800 text-white p-8 rounded-[2rem] shadow-xl text-center">
+                <p className="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">Meta Proyectada Oct 2027</p>
+                <h3 className="text-4xl font-black">
+                  ${((NUM_PADRES * (CUOTA_MENSUAL + VALOR_MERIENDA)) * MESES_PROMO).toLocaleString()}
+                </h3>
+                <p className="text-[10px] opacity-60 mt-2 italic">Cálculo: (38 padres × $58k) × 22 meses</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-2xl border-b-4 border-emerald-500 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-gray-400 uppercase">Cuotas Mes (Total)</p>
+                    <p className="text-lg font-black text-slate-800">${(NUM_PADRES * CUOTA_MENSUAL).toLocaleString()}</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border-b-4 border-orange-400 shadow-sm text-center">
+                    <p className="text-[9px] font-black text-gray-400 uppercase">Meriendas Mes (Total)</p>
+                    <p className="text-lg font-black text-slate-800">${(NUM_PADRES * VALOR_MERIENDA).toLocaleString()}</p>
+                </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                <h4 className="text-[10px] font-black uppercase text-gray-400 mb-4 text-center">Desglose de la Meta Final</h4>
+                <div className="space-y-3">
+                    <div className="flex justify-between text-sm border-b pb-2">
+                      <span className="text-gray-600">Aportes Cuotas (22m):</span>
+                      <span className="font-black text-blue-900">$41,800,000</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-b pb-2">
+                      <span className="text-gray-600">Aportes Meriendas (22m):</span>
+                      <span className="font-black text-blue-900">$6,688,000</span>
+                    </div>
+                    <div className="flex justify-between text-indigo-700 font-black pt-2">
+                      <span>GRAN TOTAL:</span>
+                      <span>$48,488,000</span>
+                    </div>
+                </div>
+            </div>
           </div>
         )}
       </main>
