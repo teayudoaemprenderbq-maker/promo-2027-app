@@ -1,528 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { fetchSheetData, postData } from './googleService';
+import React, { useState } from 'react';
+import { Lock, Wallet, ArrowUpCircle, ArrowDownCircle, Info, Calculator } from 'lucide-react';
 
-export default function App() {
-  // --- ESTADOS GLOBALES ---
-  const [tab, setTab] = useState('ingresos');
-  const [estudiantes, setEstudiantes] = useState([]);
-  const [ingresos, setIngresos] = useState([]);
-  const [gastos, setGastos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  
-  const [anioVista, setAnioVista] = useState(2026);
-  const [metaFinal, setMetaFinal] = useState(30000000); 
-  const [editandoMeta, setEditandoMeta] = useState(false);
+// --- CONFIGURACIÓN MAESTRA PROMO 2027 ---
+const PIN_ACCESO = "1234";
+const NUM_ESTUDIANTES = 38;
+const CUOTA_MENSUAL = 50000;
+const VALOR_MERIENDA = 8000;
+const MESES_TOTALES = 22; // Enero 2026 a Octubre 2027
 
-  const [presupuestoDetallado, setPresupuestoDetallado] = useState([]);
-  const [formPresupuesto, setFormPresupuesto] = useState({ concepto: '', valor: '' }); 
-  
-  // --- NUEVO ESTADO PARA FILTRO DE APORTES ---
-  const [filtroEstudiante, setFiltroEstudiante] = useState('');
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
 
-  // --- LÓGICA DE BLOQUEO ---
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const PIN_CORRECTO = '1234'; // <--- Cambia aquí el PIN si lo deseas
+  // --- DATOS DE EJEMPLO (Puedes editarlos luego) ---
+  const [gastos, setGastos] = useState([
+    { id: 1, concepto: 'Fiesta de Grado Estimada', monto: 25000000 },
+    { id: 2, concepto: 'Chaquetas y Prom', monto: 12000000 },
+    { id: 3, concepto: 'Gastos Administrativos', monto: 2000000 },
+  ]);
 
-  const manejarCambioTab = (nuevoTab) => {
-    if ((nuevoTab === 'gastos' || nuevoTab === 'presupuesto') && !isUnlocked) {
-      const pin = prompt("Introduce el PIN de acceso:");
-      if (pin === PIN_CORRECTO) {
-        setIsUnlocked(true);
-        setTab(nuevoTab);
-      } else {
-        alert("PIN Incorrecto. Acceso denegado.");
-      }
+  const [rifas, setRifas] = useState([
+    { id: 1, nombre: 'Rifa Semestral 1 (Junio 2026)', monto: 2000000 },
+  ]);
+
+  // --- CÁLCULOS AUTOMÁTICOS DE INGRESOS ---
+  const ingresoMensualCuotas = NUM_ESTUDIANTES * CUOTA_MENSUAL;
+  const ingresoMensualMeriendas = NUM_ESTUDIANTES * VALOR_MERIENDA;
+  const totalMensualFijo = ingresoMensualCuotas + ingresoMensualMeriendas;
+
+  const totalProyectadoCuotas = ingresoMensualCuotas * MESES_TOTALES;
+  const totalProyectadoMeriendas = ingresoMensualMeriendas * MESES_TOTALES;
+  const totalRifas = rifas.reduce((acc, r) => acc + r.monto, 0);
+
+  const granTotalIngresos = totalProyectadoCuotas + totalProyectadoMeriendas + totalRifas;
+  const granTotalGastos = gastos.reduce((acc, g) => acc + g.monto, 0);
+  const balanceFinal = granTotalIngresos - granTotalGastos;
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === PIN_ACCESO) {
+      setIsAuthenticated(true);
+      setError("");
     } else {
-      setTab(nuevoTab);
+      setError("PIN incorrecto");
+      setPin("");
     }
   };
 
-  const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split('T')[0],
-    concepto: 'Cuota mensual',
-    valor: '',
-    estudiante: '',
-    fileName: '',
-    fileBase64: ''
-  });
-
-  // --- CARGA DE DATOS ---
-  const cargarTodo = async () => {
-    setLoading(true);
-    try {
-      const [estData, ingData, gasData, preData] = await Promise.all([
-        fetchSheetData('getEstudiantes'),
-        fetchSheetData('getIngresos'),
-        fetchSheetData('getGastos'),
-        fetchSheetData('getPresupuesto') 
-      ]);
-      setEstudiantes(estData || []);
-      setIngresos(ingData || []);
-      setGastos(gasData || []);
-      setPresupuestoDetallado(preData || []);
-    } catch (e) {
-      console.error("Error cargando datos", e);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    cargarTodo();
-  }, []);
-
-  // --- FUNCIONES DE EXPORTACIÓN Y COMPARTIR ---
-  const exportarExcel = () => {
-    let data = [];
-    let filename = `reporte_${tab}.csv`;
-
-    if (tab === 'ingresos' || tab === 'libro') data = [...ingresos, ...gastos];
-    if (tab === 'estudiantes') data = estudiantes;
-    if (tab === 'presupuesto') data = presupuestoDetallado;
-
-    if (data.length === 0) return alert("No hay datos para exportar");
-
-    const headers = Object.keys(data[0] || {}).join(",");
-    const rows = data.map(obj => Object.values(obj).join(",")).join("\n");
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers + "\n" + rows;
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const compartirPresupuestoWA = () => {
-    const totalRecaudado = ingresos.reduce((s, i) => s + Number(i.valor), 0);
-    const totalGastado = gastos.reduce((s, g) => s + Number(g.valor), 0);
-    const saldoDisponible = totalRecaudado - totalGastado;
-    
-    const metaRealPresupuesto = presupuestoDetallado.reduce((s, p) => {
-      const v = p.valor || p.Valor || p.valor_estimado || 0;
-      return s + Number(v);
-    }, 0);
-
-    const progreso = metaRealPresupuesto > 0 
-      ? ((totalRecaudado / metaRealPresupuesto) * 100).toFixed(1) 
-      : "0.0";
-    const faltante = metaRealPresupuesto - totalRecaudado;
-    const fechaActual = new Date().toLocaleDateString('es-CO');
-
-    let mensaje = `*📊 REPORTE FINANCIERO PROMO 2027*\n`;
-    mensaje += `_Fecha: ${fechaActual}_\n\n`;
-    
-    mensaje += `*💰 ESTADO DE CUENTA:*\n`;
-    mensaje += `• Total Recaudado: *$${totalRecaudado.toLocaleString()}*\n`;
-    mensaje += `• Total Gastado: *$${totalGastado.toLocaleString()}*\n`;
-    mensaje += `• *SALDO DISPONIBLE: $${saldoDisponible.toLocaleString()}*\n\n`;
-    
-    mensaje += `*🎯 META SEGÚN PRESUPUESTO:* (Real)\n`;
-    mensaje += `• Objetivo Total: *$${metaRealPresupuesto.toLocaleString()}*\n`;
-    mensaje += `• Progreso de Recaudo: *${progreso}%*\n`;
-    mensaje += `• Faltan por Recaudar: *$${(faltante > 0 ? faltante : 0).toLocaleString()}*\n\n`;
-    
-    mensaje += `_Generado desde la App de Control Financiero._`;
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
-  };
-
-  // --- MANEJO DE ARCHIVOS ---
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData({ ...formData, fileBase64: reader.result, fileName: file.name });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmitIngreso = async (e) => {
-    e.preventDefault();
-    if (!formData.estudiante || !formData.valor) return alert("Selecciona estudiante y valor.");
-
-    const confirm1 = window.confirm(`¿Seguro que deseas registrar este ingreso?\n\nEstudiante: ${formData.estudiante}\nValor: $${Number(formData.valor).toLocaleString()}`);
-    if (!confirm1) return;
-
-    const confirm2 = window.confirm(`¡ATENCIÓN!\n\nVas a registrar $${Number(formData.valor).toLocaleString()} a nombre de ${formData.estudiante}.\n\n¿Los datos son 100% correctos?`);
-    if (!confirm2) return;
-    
-    setLoading(true);
-    try {
-      await postData('addIngreso', formData);
-      alert("✅ Ingreso guardado con éxito.");
-      setFormData({ ...formData, valor: '', estudiante: '', fileBase64: '', fileName: '' });
-      await cargarTodo();
-      setTab('libro'); 
-    } catch (error) {
-      alert("Error al guardar.");
-    }
-    setLoading(false);
-  };
-
-  const handleSubmitGasto = async (e) => {
-    e.preventDefault();
-    if (!formData.valor || !formData.concepto) return alert("Faltan datos del gasto.");
-
-    const confirmGasto = window.confirm(`¿Registrar gasto por $${Number(formData.valor).toLocaleString()} en "${formData.concepto}"?`);
-    if (!confirmGasto) return;
-
-    setLoading(true);
-    try {
-      await postData('addGasto', formData);
-      alert("✅ Gasto registrado.");
-      setFormData({ ...formData, valor: '', concepto: 'Evento', fileBase64: '', fileName: '' });
-      await cargarTodo();
-      setTab('libro');
-    } catch (e) { 
-      alert("Error."); 
-    }
-    setLoading(false);
-  };
-
-  const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-  // --- LÓGICA DE FILTRADO ---
-  const estudiantesFiltrados = estudiantes.filter(est => 
-    est.nombre.toLowerCase().includes(filtroEstudiante.toLowerCase())
-  );
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
+          <div className="flex justify-center mb-6 text-indigo-600">
+            <Lock size={48} strokeWidth={1.5} />
+          </div>
+          <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">Promo 2027</h1>
+          <p className="text-center text-slate-500 mb-8 text-sm">Control de Presupuesto e Ingresos</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              placeholder="PIN de acceso"
+              className="w-full p-4 border-2 border-slate-100 rounded-2xl text-center text-2xl tracking-[1em] focus:border-indigo-500 outline-none transition-all"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              autoFocus
+            />
+            {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
+            <button className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+              Entrar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 pb-10">
-      <header className="bg-blue-900 text-white p-5 shadow-xl text-center">
-        <h1 className="text-xl font-black uppercase tracking-widest">PROMO 2027</h1>
-        <p className="text-[10px] opacity-80 uppercase font-bold text-blue-200">Colegio Santa María Del Rosario</p>
-      </header>
-
-      <nav className="flex sticky top-0 z-20 bg-white border-b shadow-md overflow-x-auto">
-        {[
-          {id: 'ingresos', label: 'Ingresos'},
-          {id: 'libro', label: 'Libro'},
-          {id: 'gastos', label: 'Gastos'},
-          {id: 'estudiantes', label: 'Aportes'},
-          {id: 'presupuesto', label: 'Presupuesto'}
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => manejarCambioTab(item.id)}
-            className={`flex-1 min-w-[90px] py-4 px-2 text-[10px] uppercase font-black transition-all ${
-              tab === item.id ? 'bg-blue-50 text-blue-700 border-b-4 border-blue-700' : 'text-gray-400'
-            }`}
-          >
-            {item.label}
-            {(item.id === 'gastos' || item.id === 'presupuesto') && !isUnlocked && ' 🔒'}
-          </button>
-        ))}
+    <div className="min-h-screen bg-[#f8fafc] pb-20">
+      {/* Header */}
+      <nav className="bg-white border-b sticky top-0 z-10 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <h2 className="font-black text-indigo-600 text-xl tracking-tight">PROMO 2027</h2>
+          <div className="text-xs font-bold bg-slate-100 px-3 py-1 rounded-full text-slate-600 uppercase">
+            Planificación Financiera
+          </div>
+        </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 mt-4 flex justify-end">
-        <button 
-          onClick={exportarExcel}
-          className="bg-green-600 text-white text-[9px] font-black px-4 py-2 rounded-lg shadow-md uppercase flex items-center gap-2"
-        >
-          <span>📥</span> Descargar {tab}
-        </button>
-      </div>
-
-      <main className="p-4 max-w-4xl mx-auto">
-        {loading && (
-          <div className="fixed inset-0 bg-white/80 z-50 flex flex-col items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-900 mb-4"></div>
-            <p className="font-black text-blue-900 uppercase">Sincronizando...</p>
+      <div className="max-w-6xl mx-auto px-4 mt-8">
+        {/* DASHBOARD PRINCIPAL */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white p-6 rounded-3xl border border-emerald-100 shadow-sm">
+            <div className="flex items-center gap-2 text-emerald-600 mb-3">
+              <ArrowUpCircle size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider">Ingresos Totales</span>
+            </div>
+            <p className="text-2xl font-black text-slate-800">${granTotalIngresos.toLocaleString()}</p>
+            <p className="text-[10px] text-emerald-500 font-bold mt-1">PROYECCIÓN 22 MESES</p>
           </div>
-        )}
 
-        {tab === 'ingresos' && (
-          <form onSubmit={handleSubmitIngreso} className="space-y-4 bg-white p-6 rounded-2xl shadow-lg border mt-2 max-w-md mx-auto">
-            <h2 className="text-lg font-black text-blue-900 border-b pb-2 uppercase italic">Nuevo Recaudo</h2>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase">Fecha</label>
-              <input type="date" className="w-full p-3 bg-gray-50 border rounded-xl" 
-                value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} />
+          <div className="bg-white p-6 rounded-3xl border border-rose-100 shadow-sm">
+            <div className="flex items-center gap-2 text-rose-600 mb-3">
+              <ArrowDownCircle size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider">Gastos Estimados</span>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase">Estudiante</label>
-              <select className="w-full p-3 bg-gray-50 border rounded-xl"
-                value={formData.estudiante} onChange={e => setFormData({...formData, estudiante: e.target.value})}>
-                <option value="">-- Seleccionar --</option>
-                {estudiantes.map((est) => <option key={est.id} value={est.nombre}>{est.nombre}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase">Concepto</label>
-              <select className="w-full p-3 bg-gray-50 border rounded-xl"
-                value={formData.concepto} onChange={e => setFormData({...formData, concepto: e.target.value})}>
-                <option>Cuota mensual</option><option>Jean Day</option><option>Evento</option><option>Rifa</option><option>Otro</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase">Valor ($)</label>
-              <input type="number" className="w-full p-3 bg-gray-50 border rounded-xl font-black text-xl text-blue-800"
-                value={formData.valor} onChange={e => setFormData({...formData, valor: e.target.value})} />
-            </div>
-            <div className="bg-blue-50 p-4 rounded-xl border">
-                <label className="block text-[10px] font-bold text-blue-400 uppercase mb-1">Soporte de Pago (Foto)</label>
-              <input type="file" accept="image/*" onChange={handleFile} className="w-full text-[10px]" />
-            </div>
-            <button type="submit" className="w-full py-4 rounded-xl font-black text-white bg-blue-600 shadow-lg uppercase">Guardar Recaudo</button>
-          </form>
-        )}
-
-        {tab === 'gastos' && (
-          <form onSubmit={handleSubmitGasto} className="space-y-4 bg-white p-6 rounded-2xl shadow-lg border-t-4 border-red-600 mt-2 max-w-md mx-auto">
-            <h2 className="text-lg font-black text-red-900 uppercase italic">Registrar Egreso</h2>
-            <input type="date" className="w-full p-3 border rounded-xl" value={formData.fecha} onChange={e=>setFormData({...formData, fecha: e.target.value})} />
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase">Clasificación</label>
-              <select className="w-full p-3 bg-gray-50 border rounded-xl"
-                value={formData.concepto} onChange={e => setFormData({...formData, concepto: e.target.value})}>
-                <option value="Evento">Evento / Fiesta</option>
-                <option value="Papelería">Papelería</option>
-                <option value="Alimentación">Alimentación</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            <input type="number" placeholder="Valor $" className="w-full p-3 bg-red-50 border rounded-xl font-black text-red-700 text-xl" 
-              value={formData.valor} onChange={e=>setFormData({...formData, valor: e.target.value})} />
-            <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                <label className="block text-[10px] font-bold text-red-400 uppercase mb-1">Foto Soporte</label>
-              <input type="file" accept="image/*" onChange={handleFile} className="w-full text-[10px]" />
-            </div>
-            <button type="submit" className="w-full py-4 bg-red-600 text-white rounded-xl font-black uppercase shadow-lg">Registrar Gasto</button>
-          </form>
-        )}
-
-        {tab === 'estudiantes' && (
-          <div className="space-y-4 mt-2">
-            <div className="bg-white p-4 rounded-2xl shadow-lg border">
-              <div className="mb-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-sm font-black text-blue-900 uppercase">Control de Cuotas</h2>
-                  <div className="flex bg-gray-100 p-1 rounded-lg">
-                    {[2026, 2027].map(a => (
-                      <button key={a} onClick={()=>setAnioVista(a)} className={`px-3 py-1 rounded text-[10px] font-black ${anioVista===a?'bg-blue-900 text-white':'text-gray-400'}`}>{a}</button>
-                    ))}
-                  </div>
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="🔍 Buscar estudiante..." 
-                  className="w-full p-2 text-xs border rounded-lg bg-gray-50"
-                  value={filtroEstudiante}
-                  onChange={(e) => setFiltroEstudiante(e.target.value)}
-                />
-              </div>
-              
-              <div className="overflow-x-auto rounded-xl border">
-                <table className="w-full text-[10px] border-collapse min-w-[800px]">
-                  <thead className="bg-blue-900 text-white uppercase">
-                    <tr>
-                      <th className="p-3 sticky left-0 bg-blue-900 border-r z-10 min-w-[150px]">Estudiante</th>
-                      {mesesNombres.map(m => <th key={m} className="p-2 border-l border-blue-800 text-center">{m}</th>)}
-                      <th className="p-3 bg-blue-700 border-l border-blue-800 text-center">TOTAL</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {estudiantesFiltrados.map(est => {
-                      let totalEstudiante = 0;
-                      return (
-                        <tr key={est.id} className="hover:bg-blue-50">
-                          <td className="p-3 font-bold sticky left-0 bg-white border-r">{est.nombre}</td>
-                          {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                            const pagosMes = ingresos.filter(ing => 
-                              ing.estudiante === est.nombre && 
-                              new Date(ing.fecha).getUTCMonth() + 1 === m && 
-                              new Date(ing.fecha).getUTCFullYear() === anioVista
-                            );
-                            const sumaMes = pagosMes.reduce((s, p) => s + Number(p.valor), 0);
-                            totalEstudiante += sumaMes;
-                            return (
-                              <td key={m} className={`p-2 text-center border-l ${sumaMes > 0 ? 'bg-green-50 text-green-700' : 'text-gray-300'}`}>
-                                {sumaMes > 0 ? `$${(sumaMes/1000).toFixed(0)}k` : '-'}
-                              </td>
-                            );
-                          })}
-                          <td className="p-3 text-center font-black bg-gray-50 text-blue-900 border-l">
-                            ${totalEstudiante.toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <p className="text-2xl font-black text-slate-800">${granTotalGastos.toLocaleString()}</p>
+            <p className="text-[10px] text-rose-400 font-bold mt-1">META DE EGRESOS</p>
           </div>
-        )}
 
-        {tab === 'libro' && (
-          <div className="space-y-4 mt-2 max-w-md mx-auto animate-fadeIn">
-            <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl text-center border-b-4 border-blue-700">
-              <p className="text-[10px] opacity-70 uppercase font-black tracking-widest mb-1">Saldo Real en Caja</p>
-              <h3 className="text-4xl font-black italic">
-                ${(ingresos.reduce((s,i)=>s+Number(i.valor),0) - gastos.reduce((s,g)=>s+Number(g.valor),0)).toLocaleString('es-CO')}
+          <div className={`p-6 rounded-3xl shadow-sm border ${balanceFinal >= 0 ? 'bg-indigo-600 border-indigo-700' : 'bg-orange-500 border-orange-600'}`}>
+            <div className="flex items-center gap-2 text-white/80 mb-3">
+              <Wallet size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider text-white">Reserva Final</span>
+            </div>
+            <p className="text-2xl font-black text-white">${balanceFinal.toLocaleString()}</p>
+            <p className="text-[10px] text-white/70 font-bold mt-1 uppercase">Sobra / Falta</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* COLUMNA IZQUIERDA: INGRESOS */}
+          <section className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <Calculator size={20} className="text-indigo-500" /> Plan de Recaudación
               </h3>
-            </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">Cuotas Mensuales</p>
+                    <p className="text-[11px] text-slate-500">38 Padres × $50.000</p>
+                  </div>
+                  <span className="text-emerald-600 font-black">+${ingresoMensualCuotas.toLocaleString()}</span>
+                </div>
 
-            <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-              <table className="w-full text-[10px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr className="text-[8px] uppercase font-black text-gray-400">
-                    <th className="p-3 text-left">Detalle del Movimiento</th>
-                    <th className="p-3 text-right">Valor</th>
-                    <th className="p-3 text-center">Ver</th>
+                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">Meriendas Mensuales</p>
+                    <p className="text-[11px] text-slate-500">38 Ventas × $8.000</p>
+                  </div>
+                  <span className="text-emerald-600 font-black">+${ingresoMensualMeriendas.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-sm font-black text-indigo-700">TOTAL RECAUDO MENSUAL</p>
+                  <span className="text-indigo-700 font-black">${totalMensualFijo.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3">
+                <Info size={18} className="text-blue-500 flex-shrink-0" />
+                <p className="text-[11px] text-blue-700 leading-relaxed">
+                  Basado en <strong>22 meses</strong> (Ene 2026 - Oct 2027), el recaudo por cuotas será de <strong>${totalProyectadoCuotas.toLocaleString()}</strong> y por meriendas <strong>${totalProyectadoMeriendas.toLocaleString()}</strong>.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* COLUMNA DERECHA: GASTOS */}
+          <section className="bg-white p-6 rounded-3xl border shadow-sm h-fit">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <ArrowDownCircle size={20} className="text-rose-500" /> Presupuesto de Gastos
+            </h3>
+            <div className="overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                    <th className="pb-4">Concepto</th>
+                    <th className="pb-4 text-right">Inversión</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
-                  {[...ingresos, ...gastos]
-                    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-                    .slice(0, 30)
-                    .map((mov, i) => {
-                      const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
-                      const tieneSoporte = typeof link === 'string' && link.startsWith('http');
-
-                      return (
-                        <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-                          <td className="p-3">
-                            <div className="text-[9px] font-bold text-gray-400">
-                              {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
-                            </div>
-                            <div className="font-black uppercase text-blue-900 truncate max-w-[110px]">
-                              {mov.estudiante || mov.concepto}
-                            </div>
-                          </td>
-                          <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
-                            {mov.estudiante ? '+' : '-'}{Number(mov.valor).toLocaleString()}
-                          </td>
-                          <td className="p-3 text-center">
-                            {tieneSoporte ? (
-                              <a 
-                                href={link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                              >
-                                <span style={{ fontSize: '14px' }}>🖼️</span>
-                              </a>
-                            ) : (
-                              <span className="text-gray-200 italic text-[18px]"> —</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                <tbody className="divide-y divide-slate-50">
+                  {gastos.map((g) => (
+                    <tr key={g.id}>
+                      <td className="py-4 text-sm text-slate-600 font-medium">{g.concepto}</td>
+                      <td className="py-4 text-right text-sm font-black text-slate-800">${g.monto.toLocaleString()}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-              {ingresos.length === 0 && gastos.length === 0 && (
-                <div className="p-10 text-center text-gray-400 font-bold uppercase text-[10px]">
-                  No hay movimientos registrados
-                </div>
-              )}
             </div>
-          </div>
-        )}
-
-        {tab === 'presupuesto' && (
-          <div className="space-y-6 mt-2 animate-fadeIn max-w-md mx-auto">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
-              <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic">Planificar Gasto (Nuevo Item)</h2>
-              <div className="space-y-3">
-                <input type="text" placeholder="Concepto (Ej: Alquiler Sonido)" className="w-full p-3 border rounded-xl text-sm"
-                  value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
-                <input type="number" placeholder="Valor Estimado $" className="w-full p-3 border rounded-xl text-sm font-bold"
-                  value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
-                <button 
-                  onClick={async () => {
-                    if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Llena ambos campos");
-                    setLoading(true);
-                    try {
-                      await postData('addPresupuesto', formPresupuesto);
-                      setFormPresupuesto({ concepto: '', valor: '' });
-                      await cargarTodo();
-                    } catch (e) { alert("Error al guardar presupuesto"); }
-                    setLoading(false);
-                  }} 
-                  className="w-full py-3 bg-blue-900 text-white rounded-xl font-black uppercase text-[10px]"
-                >
-                  Añadir al Presupuesto
-                </button>
-              </div>
-            </div>
-            
-            <button 
-              onClick={compartirPresupuestoWA}
-              className="w-full mb-4 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
-            >
-              <span>💬</span> Compartir Presupuesto por WhatsApp
-            </button>
-
-            {(() => {
-              const tIng = ingresos.reduce((s,i)=>s+Number(i.valor),0);
-              const tGas = gastos.reduce((s,g)=>s+Number(g.valor),0);
-              const tPre = presupuestoDetallado.reduce((s, p) => {
-                const v = p.valor || p.Valor || p.valor_estimado || 0;
-                return s + Number(v);
-              }, 0);
-              const desvio = tPre - tIng;
-              const porcAvance = tPre > 0 ? Math.min((tIng/tPre)*100, 100).toFixed(1) : 0;
-
-              return (
-                <>
-                  <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-                    <div className="bg-gray-800 text-white p-3 text-[10px] font-black uppercase flex justify-between">
-                      <span>Concepto Planeado</span>
-                      <span>Valor Estimado</span>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto divide-y">
-                      {presupuestoDetallado.length > 0 ? presupuestoDetallado.map((p, i) => {
-                        const valorItem = p.valor || p.Valor || p.valor_estimado || 0;
-                        const conceptoItem = p.concepto || p.Concepto || "Sin concepto";
-                        return (
-                          <div key={i} className="p-3 text-[10px] flex justify-between bg-gray-50">
-                            <span className="font-bold uppercase text-gray-600">{conceptoItem}</span>
-                            <span className="font-black text-blue-700">${Number(valorItem).toLocaleString()}</span>
-                          </div>
-                        );
-                      }) : <p className="p-4 text-center text-gray-400 text-[10px]">No hay presupuesto detallado.</p>}
-                    </div>
-                    <div className="p-3 bg-blue-50 flex justify-between border-t border-blue-100">
-                      <span className="text-[10px] font-black uppercase text-blue-900">Total Presupuesto:</span>
-                      <span className="text-sm font-black text-blue-900">${tPre.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border-t-4 border-orange-500">
-                      <p className="text-[8px] font-bold text-gray-400 uppercase">Ejecución Real</p>
-                      <p className="text-sm font-black text-orange-600">
-                        {tPre > 0 ? ((tGas/tPre)*100).toFixed(1) : 0}%
-                      </p>
-                      <p className="text-[7px] text-gray-400">Gastado vs Planeado</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border-t-4 border-purple-500">
-                      <p className="text-[8px] font-bold text-gray-400 uppercase">Meta Recaudada</p>
-                      <p className="text-sm font-black text-purple-600">{porcAvance}%</p>
-                      <p className="text-[7px] text-gray-400">Ingresos vs Presupuesto</p>
-                    </div>
-                  </div>
-
-                  <div className={`p-5 rounded-2xl shadow-xl border-2 text-center ${desvio <= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                    <h3 className="text-[10px] font-black uppercase text-gray-500 mb-1">Estado de Ejecución</h3>
-                    <p className="text-xl font-black text-gray-900">
-                      {desvio <= 0 ? `¡Meta Alcanzada!` : `Faltan $${desvio.toLocaleString()} por recaudar`}
-                    </p>
-                    <p className="text-[9px] mt-2 italic text-gray-500">
-                      Cálculo basado en presupuesto detallado vs ingresos reales.
-                    </p>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        )}
-      </main>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default App;
