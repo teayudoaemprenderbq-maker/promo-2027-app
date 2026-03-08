@@ -21,7 +21,7 @@ export default function App() {
 
   // --- LÓGICA DE BLOQUEO ---
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const PIN_CORRECTO = '1234'; // <--- Cambia aquí el PIN si lo deseas
+  const PIN_CORRECTO = '1234';
 
   const manejarCambioTab = (nuevoTab) => {
     if ((nuevoTab === 'gastos' || nuevoTab === 'presupuesto') && !isUnlocked) {
@@ -40,6 +40,7 @@ export default function App() {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     concepto: 'Cuota mensual',
+    descripcion: '', // <--- MEJORA 1: Nuevo campo para descripción de gasto
     valor: '',
     estudiante: '',
     fileName: '',
@@ -163,16 +164,16 @@ export default function App() {
 
   const handleSubmitGasto = async (e) => {
     e.preventDefault();
-    if (!formData.valor || !formData.concepto) return alert("Faltan datos del gasto.");
+    if (!formData.valor || !formData.concepto || !formData.descripcion) return alert("Faltan datos del gasto (incluyendo descripción).");
 
-    const confirmGasto = window.confirm(`¿Registrar gasto por $${Number(formData.valor).toLocaleString()} en "${formData.concepto}"?`);
+    const confirmGasto = window.confirm(`¿Registrar gasto por $${Number(formData.valor).toLocaleString()} en "${formData.descripcion}"?`);
     if (!confirmGasto) return;
 
     setLoading(true);
     try {
       await postData('addGasto', formData);
       alert("✅ Gasto registrado.");
-      setFormData({ ...formData, valor: '', concepto: 'Evento', fileBase64: '', fileName: '' });
+      setFormData({ ...formData, valor: '', concepto: 'Evento', descripcion: '', fileBase64: '', fileName: '' });
       await cargarTodo();
       setTab('libro');
     } catch (e) { 
@@ -284,6 +285,12 @@ export default function App() {
                 <option value="Otro">Otro</option>
               </select>
             </div>
+            {/* MEJORA 1: Input de descripción */}
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase">Descripción Detallada</label>
+              <input type="text" placeholder="¿En qué se gastó exactamente?" className="w-full p-3 bg-gray-50 border rounded-xl text-sm" 
+                value={formData.descripcion} onChange={e=>setFormData({...formData, descripcion: e.target.value})} />
+            </div>
             <input type="number" placeholder="Valor $" className="w-full p-3 bg-red-50 border rounded-xl font-black text-red-700 text-xl" 
               value={formData.valor} onChange={e=>setFormData({...formData, valor: e.target.value})} />
             <div className="bg-red-50 p-4 rounded-xl border border-red-100">
@@ -370,7 +377,9 @@ export default function App() {
               <table className="w-full text-[10px]">
                 <thead className="bg-gray-50 border-b">
                   <tr className="text-[8px] uppercase font-black text-gray-400">
-                    <th className="p-3 text-left">Detalle del Movimiento</th>
+                    <th className="p-3 text-left">Detalle</th>
+                    {/* MEJORA 2: Columna Concepto */}
+                    <th className="p-3 text-left">Concepto</th>
                     <th className="p-3 text-right">Valor</th>
                     <th className="p-3 text-center">Ver</th>
                   </tr>
@@ -382,6 +391,10 @@ export default function App() {
                     .map((mov, i) => {
                       const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
                       const tieneSoporte = typeof link === 'string' && link.startsWith('http');
+                      
+                      // Lógica MEJORA 2: 
+                      // Si es ingreso, usa mov.concepto. Si es gasto, usa mov.concepto (clasificación).
+                      const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
 
                       return (
                         <tr key={i} className="hover:bg-blue-50/50 transition-colors">
@@ -389,9 +402,14 @@ export default function App() {
                             <div className="text-[9px] font-bold text-gray-400">
                               {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
                             </div>
-                            <div className="font-black uppercase text-blue-900 truncate max-w-[110px]">
-                              {mov.estudiante || mov.concepto}
+                            <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
+                              {/* En gastos mostramos la descripción si existe, si no el concepto */}
+                              {mov.estudiante ? mov.estudiante : (mov.descripcion || mov.concepto)}
                             </div>
+                          </td>
+                          {/* MEJORA 2: Celda Concepto */}
+                          <td className="p-3 text-gray-500 italic uppercase text-[9px]">
+                            {conceptoMuestra}
                           </td>
                           <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
                             {mov.estudiante ? '+' : '-'}{Number(mov.valor).toLocaleString()}
@@ -415,11 +433,6 @@ export default function App() {
                     })}
                 </tbody>
               </table>
-              {ingresos.length === 0 && gastos.length === 0 && (
-                <div className="p-10 text-center text-gray-400 font-bold uppercase text-[10px]">
-                  No hay movimientos registrados
-                </div>
-              )}
             </div>
           </div>
         )}
