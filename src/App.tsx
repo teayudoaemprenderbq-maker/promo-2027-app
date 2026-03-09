@@ -440,13 +440,20 @@ export default function App() {
         {tab === 'presupuesto' && (
   <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
     
-    {/* FORMULARIO: Mantiene todas las funciones de rango, concepto, valor y tipo */}
+    {/* SELECTOR DE AÑO (Restaurado) */}
+    <div className="flex justify-center items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border">
+      <button onClick={() => setAnioVista(anioVista - 1)} className="p-2 bg-gray-100 rounded-full">◀</button>
+      <span className="text-xl font-black text-blue-900">AÑO {anioVista}</span>
+      <button onClick={() => setAnioVista(anioVista + 1)} className="p-2 bg-gray-100 rounded-full">▶</button>
+    </div>
+
+    {/* FORMULARIO DE PROGRAMACIÓN */}
     <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
       <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
       
       <div className="space-y-3">
         <input type="text" placeholder="Concepto (Ej: Merienda)" className="w-full p-3 border rounded-xl text-sm"
-          value={formPresupuesto.concept} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
+          value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
         
         <div className="grid grid-cols-2 gap-2">
           <input type="number" placeholder="Valor Mensual $" className="w-full p-3 border rounded-xl text-sm font-bold"
@@ -459,7 +466,6 @@ export default function App() {
           </select>
         </div>
 
-        {/* Selector de Rango o Mes Único */}
         <div className="flex bg-gray-100 p-1 rounded-xl">
           <button onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
             className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
@@ -493,14 +499,10 @@ export default function App() {
         <button 
           onClick={async () => {
             if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
-            if(formPresupuesto.esRango && formPresupuesto.mesFin < formPresupuesto.mesInicio) return alert("El mes de fin debe ser mayor al de inicio");
-            
             setLoading(true);
             try {
               const inicio = formPresupuesto.mesInicio;
               const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
-              
-              // Aquí sigue procesando mes a mes (RANGO O ÚNICO)
               for(let m = inicio; m <= fin; m++) {
                 await postData('addPresupuesto', {
                   concepto: formPresupuesto.concepto,
@@ -510,20 +512,19 @@ export default function App() {
                   anio: anioVista
                 });
               }
-              alert(`Éxito: Se registraron ${fin - inicio + 1} meses.`);
+              alert("Presupuesto actualizado correctamente");
               await cargarTodo();
-              setFormPresupuesto({...formPresupuesto, concepto: '', valor: ''}); // Limpiar campos
             } catch (e) { alert("Error al guardar"); }
             setLoading(false);
           }} 
-          className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
+          className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl"
         >
-          {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
+          Guardar Programación
         </button>
       </div>
     </div>
 
-    {/* TABLA: Muestra ingresos y gastos discriminados */}
+    {/* TABLA DISCRIMINADA POR AÑO SELECCIONADO */}
     <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-[10px] text-left border-collapse min-w-[800px]">
@@ -531,18 +532,17 @@ export default function App() {
             <tr>
               <th className="p-3 sticky left-0 bg-gray-900 z-10 border-r min-w-[150px]">Concepto</th>
               {mesesNombres.map(m => <th key={m} className="p-2 text-center border-l text-[8px]">{m.substring(0,3)}</th>)}
-              <th className="p-3 text-right bg-gray-800">Total</th>
+              <th className="p-3 text-right bg-gray-800">Total {anioVista}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {[...new Set(presupuestoDetallado.map(p => p.concepto))].map(conc => {
               const items = presupuestoDetallado.filter(p => p.concepto === conc && Number(p.anio) === anioVista);
               if (items.length === 0) return null;
-              
               const esIngreso = items[0].tipo === 'ingreso';
 
               return (
-                <tr key={conc} className="hover:bg-gray-50 transition-colors">
+                <tr key={conc} className="hover:bg-gray-50">
                   <td className="p-3 font-bold sticky left-0 bg-white border-r">
                     {esIngreso ? '🟢' : '🔴'} {conc}
                   </td>
@@ -565,7 +565,7 @@ export default function App() {
         </table>
       </div>
     </div>
- 
+   
             {/* RESUMEN FINAL */}
             <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
                <div className="flex justify-between items-center mb-4">
