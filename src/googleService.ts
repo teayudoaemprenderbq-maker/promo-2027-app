@@ -1,4 +1,4 @@
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzmFX-fExIhNXZIzv7tFjDwqGdhvpVAx2wCelP-xU0EpZTlxeDRBbsqobmtjwgzDb_9QA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwrxKI4h6Bt4tARhN3XDvxcz0RL0w1g4A2-d9lwu6BUYNKkGONXJduNu8oxJvReWQ42TA/exec;
 
 export const fetchSheetData = async (action: string) => {
   try {
