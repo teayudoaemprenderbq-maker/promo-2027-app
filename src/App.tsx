@@ -18,9 +18,11 @@ export default function App() {
   concepto: '', 
   valor: '', 
   tipo: 'ingreso', 
-  mes: 1, 
-  anio: 2026 
-}); 
+  mesInicio: 1, 
+  mesFin: 1, 
+  anio: 2026,
+  esRango: false 
+});
   
   // --- NUEVO ESTADO PARA FILTRO DE APORTES ---
   const [filtroEstudiante, setFiltroEstudiante] = useState('');
@@ -447,68 +449,83 @@ export default function App() {
   <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
     
     {/* FORMULARIO AVANZADO DE PLANIFICACIÓN */}
-    <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-blue-900">
-      <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic">📅 Programación Mensual 2026-2027</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-3">
-          <select 
-            className="w-full p-3 border rounded-xl text-sm font-bold bg-gray-50"
-            value={formPresupuesto.tipo || 'ingreso'} 
-            onChange={e => setFormPresupuesto({...formPresupuesto, tipo: e.target.value})}
-          >
-            <option value="ingreso">🟢 Presupuestar Ingreso (Cuota/Rifa/Merienda)</option>
-            <option value="gasto">🔴 Presupuestar Gasto (Evento/Salida)</option>
-          </select>
-          
-          <input type="text" placeholder="Concepto" 
-            className="w-full p-3 border rounded-xl text-sm"
-            value={formPresupuesto.concepto} 
-            onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
-          
-          <input type="number" placeholder="Valor $" 
-            className="w-full p-3 border rounded-xl text-sm font-bold"
-            value={formPresupuesto.valor} 
-            onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
-        </div>
+   <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
+  <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
+  
+  <div className="space-y-3">
+    {/* Concepto y Valor */}
+    <input type="text" placeholder="Concepto (Ej: Merienda)" className="w-full p-3 border rounded-xl text-sm"
+      value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
+    
+    <input type="number" placeholder="Valor Mensual $" className="w-full p-3 border rounded-xl text-sm font-bold"
+      value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Mes</label>
-            <select className="w-full p-3 border rounded-xl text-sm"
-              value={formPresupuesto.mes} onChange={e => setFormPresupuesto({...formPresupuesto, mes: e.target.value})}>
-              {mesesNombres.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Año</label>
-            <select className="w-full p-3 border rounded-xl text-sm"
-              value={formPresupuesto.anio} onChange={e => setFormPresupuesto({...formPresupuesto, anio: e.target.value})}>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
-          </div>
-          <button 
-            onClick={async () => {
-              if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
-              setLoading(true);
-              try {
-                await postData('addPresupuesto', {
-                  ...formPresupuesto,
-                  tipo: formPresupuesto.tipo || 'ingreso',
-                  mes: formPresupuesto.mes || 1,
-                  anio: formPresupuesto.anio || 2026
-                });
-                setFormPresupuesto({ concepto: '', valor: '', tipo: 'ingreso', mes: 1, anio: 2026 });
-                await cargarTodo();
-              } catch (e) { alert("Error"); }
-              setLoading(false);
-            }}
-            className="col-span-2 py-3 bg-blue-900 text-white rounded-xl font-black uppercase text-[10px] shadow-lg mt-2"
-          >
-            Añadir a la línea de tiempo
-          </button>
-        </div>
+    {/* Toggle: ¿Un mes o varios? */}
+    <div className="flex bg-gray-100 p-1 rounded-xl">
+      <button 
+        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
+        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+        UN SOLO MES
+      </button>
+      <button 
+        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: true})}
+        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+        RANGO DE MESES
+      </button>
+    </div>
+
+    {/* Selectores de Meses */}
+    <div className="grid grid-cols-2 gap-2">
+      <div className="flex flex-col">
+        <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">{formPresupuesto.esRango ? 'Desde' : 'Mes'}</label>
+        <select className="p-3 border rounded-xl text-sm bg-gray-50"
+          value={formPresupuesto.mesInicio} onChange={e => setFormPresupuesto({...formPresupuesto, mesInicio: parseInt(e.target.value)})}>
+          {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+        </select>
       </div>
+
+      {formPresupuesto.esRango && (
+        <div className="flex flex-col">
+          <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">Hasta</label>
+          <select className="p-3 border rounded-xl text-sm bg-gray-50"
+            value={formPresupuesto.mesFin} onChange={e => setFormPresupuesto({...formPresupuesto, mesFin: parseInt(e.target.value)})}>
+            {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+          </select>
+        </div>
+      )}
+    </div>
+
+    {/* Botón de Acción con Bucle */}
+    <button 
+      onClick={async () => {
+        if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
+        if(formPresupuesto.esRango && formPresupuesto.mesFin < formPresupuesto.mesInicio) return alert("El mes de fin debe ser mayor al de inicio");
+        
+        setLoading(true);
+        try {
+          const inicio = formPresupuesto.mesInicio;
+          const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
+          
+          for(let m = inicio; m <= fin; m++) {
+            await postData('addPresupuesto', {
+              concepto: formPresupuesto.concepto,
+              valor: formPresupuesto.valor,
+              tipo: formPresupuesto.tipo,
+              mes: m,
+              anio: anioVista
+            });
+          }
+          alert(`Éxito: Se registraron ${fin - inicio + 1} meses.`);
+          await cargarTodo();
+        } catch (e) { alert("Error en la carga masiva"); }
+        setLoading(false);
+      }} 
+      className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
+    >
+      {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
+    </button>
+  </div>
+</div>
     </div>
 
     {/* TABLA DE PRESUPUESTO GENERAL (Línea de Tiempo) */}
