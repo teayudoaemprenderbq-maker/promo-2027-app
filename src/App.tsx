@@ -565,9 +565,7 @@ export default function App() {
         </table>
       </div>
     </div>
-  </div>
-)}
-
+ 
             {/* RESUMEN FINAL */}
             <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
                <div className="flex justify-between items-center mb-4">
