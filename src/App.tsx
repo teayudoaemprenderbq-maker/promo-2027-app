@@ -15,14 +15,14 @@ export default function App() {
 
   const [presupuestoDetallado, setPresupuestoDetallado] = useState([]);
   const [formPresupuesto, setFormPresupuesto] = useState({ 
-  concepto: '', 
-  valor: '', 
-  tipo: 'ingreso', 
-  mesInicio: 1, 
-  mesFin: 1, 
-  anio: 2026,
-  esRango: false 
-});
+    concepto: '', 
+    valor: '', 
+    tipo: 'ingreso', 
+    mesInicio: 1, 
+    mesFin: 1, 
+    anio: 2026,
+    esRango: false 
+  });
   
   // --- NUEVO ESTADO PARA FILTRO DE APORTES ---
   const [filtroEstudiante, setFiltroEstudiante] = useState('');
@@ -48,7 +48,7 @@ export default function App() {
   const [formData, setFormData] = useState({
     fecha: new Date().toISOString().split('T')[0],
     concepto: 'Cuota mensual',
-    descripcion: '', // <--- MEJORA 1: Nuevo campo para descripción de gasto
+    descripcion: '', 
     valor: '',
     estudiante: '',
     fileName: '',
@@ -103,13 +103,13 @@ export default function App() {
   };
 
   const compartirPresupuestoWA = () => {
-    const totalRecaudado = ingresos.reduce((s, i) => s + Number(i.valor), 0);
-    const totalGastado = gastos.reduce((s, g) => s + Number(g.valor), 0);
+    const totalRecaudado = ingresos.reduce((s, i) => s + Number(i.valor || 0), 0);
+    const totalGastado = gastos.reduce((s, g) => s + Number(g.valor || 0), 0);
     const saldoDisponible = totalRecaudado - totalGastado;
     
     const metaRealPresupuesto = presupuestoDetallado.reduce((s, p) => {
-      const v = p.valor || p.Valor || p.valor_estimado || 0;
-      return s + Number(v);
+      const v = p.valor || p.Valor || 0;
+      return p.tipo === 'ingreso' ? s + Number(v) : s;
     }, 0);
 
     const progreso = metaRealPresupuesto > 0 
@@ -150,13 +150,12 @@ export default function App() {
   const handleSubmitIngreso = async (e) => {
     e.preventDefault();
     if (!formData.estudiante || !formData.valor) return alert("Selecciona estudiante y valor.");
+    const val = Number(formData.valor);
+    if (isNaN(val)) return alert("Valor no válido");
 
-    const confirm1 = window.confirm(`¿Seguro que deseas registrar este ingreso?\n\nEstudiante: ${formData.estudiante}\nValor: $${Number(formData.valor).toLocaleString()}`);
+    const confirm1 = window.confirm(`¿Seguro que deseas registrar este ingreso?\n\nEstudiante: ${formData.estudiante}\nValor: $${val.toLocaleString()}`);
     if (!confirm1) return;
 
-    const confirm2 = window.confirm(`¡ATENCIÓN!\n\nVas a registrar $${Number(formData.valor).toLocaleString()} a nombre de ${formData.estudiante}.\n\n¿Los datos son 100% correctos?`);
-    if (!confirm2) return;
-    
     setLoading(true);
     try {
       await postData('addIngreso', formData);
@@ -172,9 +171,10 @@ export default function App() {
 
   const handleSubmitGasto = async (e) => {
     e.preventDefault();
-    if (!formData.valor || !formData.concepto || !formData.descripcion) return alert("Faltan datos del gasto (incluyendo descripción).");
+    if (!formData.valor || !formData.concepto || !formData.descripcion) return alert("Faltan datos del gasto.");
 
-    const confirmGasto = window.confirm(`¿Registrar gasto por $${Number(formData.valor).toLocaleString()} en "${formData.descripcion}"?`);
+    const val = Number(formData.valor);
+    const confirmGasto = window.confirm(`¿Registrar gasto por $${val.toLocaleString()} en "${formData.descripcion}"?`);
     if (!confirmGasto) return;
 
     setLoading(true);
@@ -192,7 +192,6 @@ export default function App() {
 
   const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // --- LÓGICA DE FILTRADO ---
   const estudiantesFiltrados = estudiantes.filter(est => 
     est.nombre.toLowerCase().includes(filtroEstudiante.toLowerCase())
   );
@@ -293,7 +292,6 @@ export default function App() {
                 <option value="Otro">Otro</option>
               </select>
             </div>
-            {/* MEJORA 1: Input de descripción */}
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase">Descripción Detallada</label>
               <input type="text" placeholder="¿En qué se gastó exactamente?" className="w-full p-3 bg-gray-50 border rounded-xl text-sm" 
@@ -351,7 +349,7 @@ export default function App() {
                               new Date(ing.fecha).getUTCMonth() + 1 === m && 
                               new Date(ing.fecha).getUTCFullYear() === anioVista
                             );
-                            const sumaMes = pagosMes.reduce((s, p) => s + Number(p.valor), 0);
+                            const sumaMes = pagosMes.reduce((s, p) => s + Number(p.valor || 0), 0);
                             totalEstudiante += sumaMes;
                             return (
                               <td key={m} className={`p-2 text-center border-l ${sumaMes > 0 ? 'bg-green-50 text-green-700' : 'text-gray-300'}`}>
@@ -377,7 +375,7 @@ export default function App() {
             <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl text-center border-b-4 border-blue-700">
               <p className="text-[10px] opacity-70 uppercase font-black tracking-widest mb-1">Saldo Real en Caja</p>
               <h3 className="text-4xl font-black italic">
-                ${(ingresos.reduce((s,i)=>s+Number(i.valor),0) - gastos.reduce((s,g)=>s+Number(g.valor),0)).toLocaleString('es-CO')}
+                ${(ingresos.reduce((s,i)=>s+Number(i.valor || 0),0) - gastos.reduce((s,g)=>s+Number(g.valor || 0),0)).toLocaleString('es-CO')}
               </h3>
             </div>
 
@@ -386,7 +384,6 @@ export default function App() {
                 <thead className="bg-gray-50 border-b">
                   <tr className="text-[8px] uppercase font-black text-gray-400">
                     <th className="p-3 text-left">Detalle</th>
-                    {/* MEJORA 2: Columna Concepto */}
                     <th className="p-3 text-left">Concepto</th>
                     <th className="p-3 text-right">Valor</th>
                     <th className="p-3 text-center">Ver</th>
@@ -399,9 +396,6 @@ export default function App() {
                     .map((mov, i) => {
                       const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
                       const tieneSoporte = typeof link === 'string' && link.startsWith('http');
-                      
-                      // Lógica MEJORA 2: 
-                      // Si es ingreso, usa mov.concepto. Si es gasto, usa mov.concepto (clasificación).
                       const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
 
                       return (
@@ -411,16 +405,14 @@ export default function App() {
                               {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
                             </div>
                             <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
-                              {/* En gastos mostramos la descripción si existe, si no el concepto */}
                               {mov.estudiante ? mov.estudiante : (mov.descripcion || mov.concepto)}
                             </div>
                           </td>
-                          {/* MEJORA 2: Celda Concepto */}
                           <td className="p-3 text-gray-500 italic uppercase text-[9px]">
                             {conceptoMuestra}
                           </td>
                           <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
-                            {mov.estudiante ? '+' : '-'}{Number(mov.valor).toLocaleString()}
+                            {mov.estudiante ? '+' : '-'}{Number(mov.valor || 0).toLocaleString()}
                           </td>
                           <td className="p-3 text-center">
                             {tieneSoporte ? (
@@ -446,191 +438,192 @@ export default function App() {
         )}
 
         {tab === 'presupuesto' && (
-  <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
-    
-    {/* FORMULARIO AVANZADO DE PLANIFICACIÓN */}
-   <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
-  <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
-  
-  <div className="space-y-3">
-    {/* Concepto y Valor */}
-    <input type="text" placeholder="Concepto (Ej: Merienda)" className="w-full p-3 border rounded-xl text-sm"
-      value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
-    
-    <input type="number" placeholder="Valor Mensual $" className="w-full p-3 border rounded-xl text-sm font-bold"
-      value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
-
-    {/* Toggle: ¿Un mes o varios? */}
-    <div className="flex bg-gray-100 p-1 rounded-xl">
-      <button 
-        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
-        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
-        UN SOLO MES
-      </button>
-      <button 
-        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: true})}
-        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
-        RANGO DE MESES
-      </button>
-    </div>
-
-    {/* Selectores de Meses */}
-    <div className="grid grid-cols-2 gap-2">
-      <div className="flex flex-col">
-        <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">{formPresupuesto.esRango ? 'Desde' : 'Mes'}</label>
-        <select className="p-3 border rounded-xl text-sm bg-gray-50"
-          value={formPresupuesto.mesInicio} onChange={e => setFormPresupuesto({...formPresupuesto, mesInicio: parseInt(e.target.value)})}>
-          {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-        </select>
-      </div>
-
-      {formPresupuesto.esRango && (
-        <div className="flex flex-col">
-          <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">Hasta</label>
-          <select className="p-3 border rounded-xl text-sm bg-gray-50"
-            value={formPresupuesto.mesFin} onChange={e => setFormPresupuesto({...formPresupuesto, mesFin: parseInt(e.target.value)})}>
-            {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-          </select>
-        </div>
-      )}
-    </div>
-
-    {/* Botón de Acción con Bucle */}
-    <button 
-      onClick={async () => {
-        if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
-        if(formPresupuesto.esRango && formPresupuesto.mesFin < formPresupuesto.mesInicio) return alert("El mes de fin debe ser mayor al de inicio");
-        
-        setLoading(true);
-        try {
-          const inicio = formPresupuesto.mesInicio;
-          const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
-          
-          for(let m = inicio; m <= fin; m++) {
-            await postData('addPresupuesto', {
-              concepto: formPresupuesto.concepto,
-              valor: formPresupuesto.valor,
-              tipo: formPresupuesto.tipo,
-              mes: m,
-              anio: anioVista
-            });
-          }
-          alert(`Éxito: Se registraron ${fin - inicio + 1} meses.`);
-          await cargarTodo();
-        } catch (e) { alert("Error en la carga masiva"); }
-        setLoading(false);
-      }} 
-      className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
-    >
-      {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
-    </button>
-  </div>
-</div>
-    {/* TABLA DE PRESUPUESTO GENERAL (Línea de Tiempo) */}
-    <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
-      <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
-        <h3 className="text-[10px] font-black uppercase tracking-widest">Presupuesto General: Ingresos vs Gastos</h3>
-        <div className="flex gap-2">
-           <button onClick={() => setAnioVista(2026)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2026 ? 'bg-blue-600' : 'bg-gray-700'}`}>2026</button>
-           <button onClick={() => setAnioVista(2027)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2027 ? 'bg-blue-600' : 'bg-gray-700'}`}>2027</button>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-[10px] text-left">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="p-3 font-black uppercase text-gray-500">Actividad / Concepto</th>
-              {mesesNombres.map(m => <th key={m} className="p-2 text-center border-l text-[8px]">{m.substring(0,3)}</th>)}
-              <th className="p-3 text-right bg-gray-200">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {/* Agrupamos presupuesto por concepto para mostrar filas únicas */}
-            {[...new Set(presupuestoDetallado.map(p => p.concepto))].map(concepto => {
-              const items = presupuestoDetallado.filter(p => p.concepto === concepto && Number(p.anio) === anioVista);
-              if (items.length === 0) return null;
-              const esIngreso = items[0].tipo === 'ingreso';
+          <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
+            
+            {/* FORMULARIO AVANZADO DE PLANIFICACIÓN */}
+            <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
+              <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
               
-              return (
-                <tr key={concepto} className="hover:bg-gray-50">
-                  <td className="p-3 font-bold flex items-center gap-1">
-                    {esIngreso ? '🟢' : '🔴'} {concepto}
-                  </td>
-                  {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                    const mesData = items.find(it => Number(it.mes) === m);
-                    return (
-                      <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50' : 'bg-red-50') : ''}`}>
-                        {mesData ? `$${(Number(mesData.valor)/1000).toFixed(0)}k` : '-'}
-                      </td>
-                    );
-                  })}
-                  <td className="p-3 text-right font-black bg-gray-50">
-                    ${items.reduce((s, it) => s + Number(it.valor), 0).toLocaleString()}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot className="bg-blue-900 text-white font-black">
-            <tr>
-              <td className="p-3 uppercase">Diferencia Mensual</td>
-              {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                const mesItems = presupuestoDetallado.filter(p => Number(p.mes) === m && Number(p.anio) === anioVista);
-                const sumI = mesItems.filter(p => p.tipo === 'ingreso').reduce((s, it) => s + Number(it.valor), 0);
-                const sumG = mesItems.filter(p => p.tipo === 'gasto').reduce((s, it) => s + Number(it.valor), 0);
-                const diff = sumI - sumG;
-                return (
-                  <td key={m} className={`p-2 text-center border-l text-[8px] ${diff < 0 ? 'text-red-300' : 'text-green-300'}`}>
-                    {diff !== 0 ? `${diff > 0 ? '+' : ''}${(diff/1000).toFixed(0)}k` : '-'}
-                  </td>
-                );
-              })}
-              <td className="p-3 text-right bg-blue-800">
-                {(() => {
-                  const tI = presupuestoDetallado.filter(p => p.tipo === 'ingreso' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
-                  const tG = presupuestoDetallado.filter(p => p.tipo === 'gasto' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
-                  return `$${(tI - tG).toLocaleString()}`;
-                })()}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
+              <div className="space-y-3">
+                <input type="text" placeholder="Concepto (Ej: Merienda)" className="w-full p-3 border rounded-xl text-sm"
+                  value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" placeholder="Valor Mensual $" className="w-full p-3 border rounded-xl text-sm font-bold"
+                    value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
+                  
+                  <select className="p-3 border rounded-xl text-sm bg-gray-50 font-bold"
+                    value={formPresupuesto.tipo} onChange={e => setFormPresupuesto({...formPresupuesto, tipo: e.target.value})}>
+                    <option value="ingreso">🟢 Ingreso</option>
+                    <option value="gasto">🔴 Gasto</option>
+                  </select>
+                </div>
 
-    {/* RESUMEN FINAL DE LA META 2026-2027 */}
-    <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
-       <div className="flex justify-between items-center mb-4">
-          <h4 className="text-xs font-black uppercase tracking-widest opacity-80">Proyección Total a Octubre 2027</h4>
-          <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold">Resumen Global</span>
-       </div>
-       <div className="grid grid-cols-2 gap-6 text-center">
-          <div>
-            <p className="text-[10px] uppercase opacity-60">Ingresos Proyectados</p>
-            <p className="text-2xl font-black">${presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor),0).toLocaleString()}</p>
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                  <button onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
+                    className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+                    UN SOLO MES
+                  </button>
+                  <button onClick={() => setFormPresupuesto({...formPresupuesto, esRango: true})}
+                    className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+                    RANGO DE MESES
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col">
+                    <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">{formPresupuesto.esRango ? 'Desde' : 'Mes'}</label>
+                    <select className="p-3 border rounded-xl text-sm bg-gray-50"
+                      value={formPresupuesto.mesInicio} onChange={e => setFormPresupuesto({...formPresupuesto, mesInicio: parseInt(e.target.value)})}>
+                      {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                    </select>
+                  </div>
+                  {formPresupuesto.esRango && (
+                    <div className="flex flex-col">
+                      <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">Hasta</label>
+                      <select className="p-3 border rounded-xl text-sm bg-gray-50"
+                        value={formPresupuesto.mesFin} onChange={e => setFormPresupuesto({...formPresupuesto, mesFin: parseInt(e.target.value)})}>
+                        {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={async () => {
+                    if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
+                    if(formPresupuesto.esRango && formPresupuesto.mesFin < formPresupuesto.mesInicio) return alert("El mes de fin debe ser mayor al de inicio");
+                    
+                    setLoading(true);
+                    try {
+                      const inicio = formPresupuesto.mesInicio;
+                      const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
+                      
+                      for(let m = inicio; m <= fin; m++) {
+                        await postData('addPresupuesto', {
+                          concepto: formPresupuesto.concepto,
+                          valor: Number(formPresupuesto.valor),
+                          tipo: formPresupuesto.tipo,
+                          mes: m,
+                          anio: anioVista
+                        });
+                      }
+                      alert(`Éxito: Se registraron ${fin - inicio + 1} meses.`);
+                      await cargarTodo();
+                    } catch (e) { alert("Error en la carga masiva"); }
+                    setLoading(false);
+                  }} 
+                  className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
+                >
+                  {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
+                </button>
+              </div>
+            </div>
+
+            {/* TABLA DE PRESUPUESTO GENERAL */}
+            <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
+              <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
+                <h3 className="text-[10px] font-black uppercase tracking-widest">Presupuesto General: Ingresos vs Gastos</h3>
+                <div className="flex gap-2">
+                   <button onClick={() => setAnioVista(2026)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2026 ? 'bg-blue-600' : 'bg-gray-700'}`}>2026</button>
+                   <button onClick={() => setAnioVista(2027)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2027 ? 'bg-blue-600' : 'bg-gray-700'}`}>2027</button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-[10px] text-left">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="p-3 font-black uppercase text-gray-500">Actividad / Concepto</th>
+                      {mesesNombres.map(m => <th key={m} className="p-2 text-center border-l text-[8px]">{m.substring(0,3)}</th>)}
+                      <th className="p-3 text-right bg-gray-200">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[...new Set(presupuestoDetallado.map(p => p.concepto || p.Concepto))].map(concepto => {
+                      const items = presupuestoDetallado.filter(p => (p.concepto === concepto || p.Concepto === concepto) && Number(p.anio) === anioVista);
+                      if (items.length === 0) return null;
+                      const esIngreso = items[0].tipo === 'ingreso';
+                      
+                      return (
+                        <tr key={concepto} className="hover:bg-gray-50">
+                          <td className="p-3 font-bold flex items-center gap-1">
+                            {esIngreso ? '🟢' : '🔴'} {concepto}
+                          </td>
+                          {Array.from({length: 12}, (_, i) => i + 1).map(m => {
+                            const mesData = items.find(it => Number(it.mes) === m);
+                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
+                            return (
+                              <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700') : ''}`}>
+                                {val > 0 ? `$${(val/1000).toFixed(0)}k` : '-'}
+                              </td>
+                            );
+                          })}
+                          <td className="p-3 text-right font-black bg-gray-50">
+                            ${items.reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot className="bg-blue-900 text-white font-black">
+                    <tr>
+                      <td className="p-3 uppercase">Diferencia Mensual</td>
+                      {Array.from({length: 12}, (_, i) => i + 1).map(m => {
+                        const mesItems = presupuestoDetallado.filter(p => Number(p.mes) === m && Number(p.anio) === anioVista);
+                        const sumI = mesItems.filter(p => p.tipo === 'ingreso').reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0);
+                        const sumG = mesItems.filter(p => p.tipo === 'gasto').reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0);
+                        const diff = sumI - sumG;
+                        return (
+                          <td key={m} className={`p-2 text-center border-l text-[8px] ${diff < 0 ? 'text-red-300' : 'text-green-300'}`}>
+                            {diff !== 0 ? `${diff > 0 ? '+' : ''}${(diff/1000).toFixed(0)}k` : '-'}
+                          </td>
+                        );
+                      })}
+                      <td className="p-3 text-right bg-blue-800">
+                        {(() => {
+                          const tI = presupuestoDetallado.filter(p => p.tipo === 'ingreso' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0);
+                          const tG = presupuestoDetallado.filter(p => p.tipo === 'gasto' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0);
+                          return `$${(tI - tG).toLocaleString()}`;
+                        })()}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* RESUMEN FINAL */}
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
+               <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-xs font-black uppercase tracking-widest opacity-80">Proyección Global</h4>
+               </div>
+               <div className="grid grid-cols-2 gap-6 text-center">
+                  <div>
+                    <p className="text-[10px] uppercase opacity-60">Ingresos Totales</p>
+                    <p className="text-2xl font-black">${presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase opacity-60">Gastos Totales</p>
+                    <p className="text-2xl font-black text-red-300">${presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0).toLocaleString()}</p>
+                  </div>
+               </div>
+               <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-end">
+                  <div>
+                    <p className="text-[9px] uppercase opacity-60">Saldo Final Estimado</p>
+                    <p className="text-3xl font-black italic text-yellow-400">
+                      ${(presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0) - 
+                         presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0)).toLocaleString()}
+                    </p>
+                  </div>
+                  <button onClick={compartirPresupuestoWA} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl transition-all shadow-lg">
+                      💬 Compartir
+                  </button>
+               </div>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] uppercase opacity-60">Gastos Proyectados</p>
-            <p className="text-2xl font-black text-red-300">${presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor),0).toLocaleString()}</p>
-          </div>
-       </div>
-       <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-end">
-          <div>
-            <p className="text-[9px] uppercase opacity-60">Saldo Final Estimado</p>
-            <p className="text-3xl font-black italic text-yellow-400">
-              ${(presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor),0) - 
-                 presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor),0)).toLocaleString()}
-            </p>
-          </div>
-          <button onClick={compartirPresupuestoWA} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl transition-all shadow-lg">
-             💬 Compartir
-          </button>
-       </div>
-    </div>
-  </div>
-)}
-  </main>
+        )}
+      </main>
     </div>
   );
 }
