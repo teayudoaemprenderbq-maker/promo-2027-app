@@ -14,7 +14,13 @@ export default function App() {
   const [editandoMeta, setEditandoMeta] = useState(false);
 
   const [presupuestoDetallado, setPresupuestoDetallado] = useState([]);
-  const [formPresupuesto, setFormPresupuesto] = useState({ concepto: '', valor: '' }); 
+  const [formPresupuesto, setFormPresupuesto] = useState({ 
+  concepto: '', 
+  valor: '', 
+  tipo: 'ingreso', 
+  mes: 1, 
+  anio: 2026 
+}); 
   
   // --- NUEVO ESTADO PARA FILTRO DE APORTES ---
   const [filtroEstudiante, setFiltroEstudiante] = useState('');
@@ -438,104 +444,178 @@ export default function App() {
         )}
 
         {tab === 'presupuesto' && (
-          <div className="space-y-6 mt-2 animate-fadeIn max-w-md mx-auto">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
-              <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic">Planificar Gasto (Nuevo Item)</h2>
-              <div className="space-y-3">
-                <input type="text" placeholder="Concepto (Ej: Alquiler Sonido)" className="w-full p-3 border rounded-xl text-sm"
-                  value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
-                <input type="number" placeholder="Valor Estimado $" className="w-full p-3 border rounded-xl text-sm font-bold"
-                  value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
-                <button 
-                  onClick={async () => {
-                    if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Llena ambos campos");
-                    setLoading(true);
-                    try {
-                      await postData('addPresupuesto', formPresupuesto);
-                      setFormPresupuesto({ concepto: '', valor: '' });
-                      await cargarTodo();
-                    } catch (e) { alert("Error al guardar presupuesto"); }
-                    setLoading(false);
-                  }} 
-                  className="w-full py-3 bg-blue-900 text-white rounded-xl font-black uppercase text-[10px]"
-                >
-                  Añadir al Presupuesto
-                </button>
-              </div>
-            </div>
-            
-            <button 
-              onClick={compartirPresupuestoWA}
-              className="w-full mb-4 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg"
-            >
-              <span>💬</span> Compartir Presupuesto por WhatsApp
-            </button>
+  <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
+    
+    {/* FORMULARIO AVANZADO DE PLANIFICACIÓN */}
+    <div className="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-blue-900">
+      <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic">📅 Programación Mensual 2026-2027</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-3">
+          <select 
+            className="w-full p-3 border rounded-xl text-sm font-bold bg-gray-50"
+            value={formPresupuesto.tipo || 'ingreso'} 
+            onChange={e => setFormPresupuesto({...formPresupuesto, tipo: e.target.value})}
+          >
+            <option value="ingreso">🟢 Presupuestar Ingreso (Cuota/Rifa/Merienda)</option>
+            <option value="gasto">🔴 Presupuestar Gasto (Evento/Salida)</option>
+          </select>
+          
+          <input type="text" placeholder="Concepto" 
+            className="w-full p-3 border rounded-xl text-sm"
+            value={formPresupuesto.concepto} 
+            onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
+          
+          <input type="number" placeholder="Valor $" 
+            className="w-full p-3 border rounded-xl text-sm font-bold"
+            value={formPresupuesto.valor} 
+            onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
+        </div>
 
-            {(() => {
-              const tIng = ingresos.reduce((s,i)=>s+Number(i.valor),0);
-              const tGas = gastos.reduce((s,g)=>s+Number(g.valor),0);
-              const tPre = presupuestoDetallado.reduce((s, p) => {
-                const v = p.valor || p.Valor || p.valor_estimado || 0;
-                return s + Number(v);
-              }, 0);
-              const desvio = tPre - tIng;
-              const porcAvance = tPre > 0 ? Math.min((tIng/tPre)*100, 100).toFixed(1) : 0;
-
-              return (
-                <>
-                  <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-                    <div className="bg-gray-800 text-white p-3 text-[10px] font-black uppercase flex justify-between">
-                      <span>Concepto Planeado</span>
-                      <span>Valor Estimado</span>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto divide-y">
-                      {presupuestoDetallado.length > 0 ? presupuestoDetallado.map((p, i) => {
-                        const valorItem = p.valor || p.Valor || p.valor_estimado || 0;
-                        const conceptoItem = p.concepto || p.Concepto || "Sin concepto";
-                        return (
-                          <div key={i} className="p-3 text-[10px] flex justify-between bg-gray-50">
-                            <span className="font-bold uppercase text-gray-600">{conceptoItem}</span>
-                            <span className="font-black text-blue-700">${Number(valorItem).toLocaleString()}</span>
-                          </div>
-                        );
-                      }) : <p className="p-4 text-center text-gray-400 text-[10px]">No hay presupuesto detallado.</p>}
-                    </div>
-                    <div className="p-3 bg-blue-50 flex justify-between border-t border-blue-100">
-                      <span className="text-[10px] font-black uppercase text-blue-900">Total Presupuesto:</span>
-                      <span className="text-sm font-black text-blue-900">${tPre.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border-t-4 border-orange-500">
-                      <p className="text-[8px] font-bold text-gray-400 uppercase">Ejecución Real</p>
-                      <p className="text-sm font-black text-orange-600">
-                        {tPre > 0 ? ((tGas/tPre)*100).toFixed(1) : 0}%
-                      </p>
-                      <p className="text-[7px] text-gray-400">Gastado vs Planeado</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border-t-4 border-purple-500">
-                      <p className="text-[8px] font-bold text-gray-400 uppercase">Meta Recaudada</p>
-                      <p className="text-sm font-black text-purple-600">{porcAvance}%</p>
-                      <p className="text-[7px] text-gray-400">Ingresos vs Presupuesto</p>
-                    </div>
-                  </div>
-
-                  <div className={`p-5 rounded-2xl shadow-xl border-2 text-center ${desvio <= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                    <h3 className="text-[10px] font-black uppercase text-gray-500 mb-1">Estado de Ejecución</h3>
-                    <p className="text-xl font-black text-gray-900">
-                      {desvio <= 0 ? `¡Meta Alcanzada!` : `Faltan $${desvio.toLocaleString()} por recaudar`}
-                    </p>
-                    <p className="text-[9px] mt-2 italic text-gray-500">
-                      Cálculo basado en presupuesto detallado vs ingresos reales.
-                    </p>
-                  </div>
-                </>
-              );
-            })()}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Mes</label>
+            <select className="w-full p-3 border rounded-xl text-sm"
+              value={formPresupuesto.mes} onChange={e => setFormPresupuesto({...formPresupuesto, mes: e.target.value})}>
+              {mesesNombres.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
+            </select>
           </div>
-        )}
-      </main>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Año</label>
+            <select className="w-full p-3 border rounded-xl text-sm"
+              value={formPresupuesto.anio} onChange={e => setFormPresupuesto({...formPresupuesto, anio: e.target.value})}>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+          <button 
+            onClick={async () => {
+              if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
+              setLoading(true);
+              try {
+                await postData('addPresupuesto', {
+                  ...formPresupuesto,
+                  tipo: formPresupuesto.tipo || 'ingreso',
+                  mes: formPresupuesto.mes || 1,
+                  anio: formPresupuesto.anio || 2026
+                });
+                setFormPresupuesto({ concepto: '', valor: '', tipo: 'ingreso', mes: 1, anio: 2026 });
+                await cargarTodo();
+              } catch (e) { alert("Error"); }
+              setLoading(false);
+            }}
+            className="col-span-2 py-3 bg-blue-900 text-white rounded-xl font-black uppercase text-[10px] shadow-lg mt-2"
+          >
+            Añadir a la línea de tiempo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* TABLA DE PRESUPUESTO GENERAL (Línea de Tiempo) */}
+    <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
+      <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
+        <h3 className="text-[10px] font-black uppercase tracking-widest">Presupuesto General: Ingresos vs Gastos</h3>
+        <div className="flex gap-2">
+           <button onClick={() => setAnioVista(2026)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2026 ? 'bg-blue-600' : 'bg-gray-700'}`}>2026</button>
+           <button onClick={() => setAnioVista(2027)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2027 ? 'bg-blue-600' : 'bg-gray-700'}`}>2027</button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-[10px] text-left">
+          <thead className="bg-gray-100 border-b">
+            <tr>
+              <th className="p-3 font-black uppercase text-gray-500">Actividad / Concepto</th>
+              {mesesNombres.map(m => <th key={m} className="p-2 text-center border-l text-[8px]">{m.substring(0,3)}</th>)}
+              <th className="p-3 text-right bg-gray-200">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {/* Agrupamos presupuesto por concepto para mostrar filas únicas */}
+            {[...new Set(presupuestoDetallado.map(p => p.concepto))].map(concepto => {
+              const items = presupuestoDetallado.filter(p => p.concepto === concepto && Number(p.anio) === anioVista);
+              if (items.length === 0) return null;
+              const esIngreso = items[0].tipo === 'ingreso';
+              
+              return (
+                <tr key={concepto} className="hover:bg-gray-50">
+                  <td className="p-3 font-bold flex items-center gap-1">
+                    {esIngreso ? '🟢' : '🔴'} {concepto}
+                  </td>
+                  {Array.from({length: 12}, (_, i) => i + 1).map(m => {
+                    const mesData = items.find(it => Number(it.mes) === m);
+                    return (
+                      <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50' : 'bg-red-50') : ''}`}>
+                        {mesData ? `$${(Number(mesData.valor)/1000).toFixed(0)}k` : '-'}
+                      </td>
+                    );
+                  })}
+                  <td className="p-3 text-right font-black bg-gray-50">
+                    ${items.reduce((s, it) => s + Number(it.valor), 0).toLocaleString()}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot className="bg-blue-900 text-white font-black">
+            <tr>
+              <td className="p-3 uppercase">Diferencia Mensual</td>
+              {Array.from({length: 12}, (_, i) => i + 1).map(m => {
+                const mesItems = presupuestoDetallado.filter(p => Number(p.mes) === m && Number(p.anio) === anioVista);
+                const sumI = mesItems.filter(p => p.tipo === 'ingreso').reduce((s, it) => s + Number(it.valor), 0);
+                const sumG = mesItems.filter(p => p.tipo === 'gasto').reduce((s, it) => s + Number(it.valor), 0);
+                const diff = sumI - sumG;
+                return (
+                  <td key={m} className={`p-2 text-center border-l text-[8px] ${diff < 0 ? 'text-red-300' : 'text-green-300'}`}>
+                    {diff !== 0 ? `${diff > 0 ? '+' : ''}${(diff/1000).toFixed(0)}k` : '-'}
+                  </td>
+                );
+              })}
+              <td className="p-3 text-right bg-blue-800">
+                {(() => {
+                  const tI = presupuestoDetallado.filter(p => p.tipo === 'ingreso' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
+                  const tG = presupuestoDetallado.filter(p => p.tipo === 'gasto' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
+                  return `$${(tI - tG).toLocaleString()}`;
+                })()}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    {/* RESUMEN FINAL DE LA META 2026-2027 */}
+    <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
+       <div className="flex justify-between items-center mb-4">
+          <h4 className="text-xs font-black uppercase tracking-widest opacity-80">Proyección Total a Octubre 2027</h4>
+          <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold">Resumen Global</span>
+       </div>
+       <div className="grid grid-cols-2 gap-6 text-center">
+          <div>
+            <p className="text-[10px] uppercase opacity-60">Ingresos Proyectados</p>
+            <p className="text-2xl font-black">${presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor),0).toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase opacity-60">Gastos Proyectados</p>
+            <p className="text-2xl font-black text-red-300">${presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor),0).toLocaleString()}</p>
+          </div>
+       </div>
+       <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-end">
+          <div>
+            <p className="text-[9px] uppercase opacity-60">Saldo Final Estimado</p>
+            <p className="text-3xl font-black italic text-yellow-400">
+              ${(presupuestoDetallado.filter(p=>p.tipo==='ingreso').reduce((s,it)=>s+Number(it.valor),0) - 
+                 presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor),0)).toLocaleString()}
+            </p>
+          </div>
+          <button onClick={compartirPresupuestoWA} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl transition-all shadow-lg">
+             💬 Compartir
+          </button>
+       </div>
+    </div>
+  </div>
+)}
+  </main>
     </div>
   );
 }
