@@ -526,8 +526,8 @@ export default function App() {
     </button>
   </div>
 </div>
-    </div>
-
+</div>
+)}
     {/* TABLA DE PRESUPUESTO GENERAL (Línea de Tiempo) */}
     <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
       <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
