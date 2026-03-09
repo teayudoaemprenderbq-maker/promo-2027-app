@@ -605,28 +605,46 @@ export default function App() {
             {/* RESUMEN FINAL */}
             <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest opacity-80">Proyección Global</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest opacity-80">Proyección Total a Octubre 2027</h4>
+                  <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold">Resumen Global</span>
                </div>
                <div className="grid grid-cols-2 gap-6 text-center">
                   <div>
-                    <p className="text-[10px] uppercase opacity-60">Ingresos Totales</p>
-                    <p className="text-2xl font-black">${presupuestoDetallado.filter(p=>p.tipo==='ingreso' || !p.tipo).reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0).toLocaleString()}</p>
+                    <p className="text-[10px] uppercase opacity-60">Ingresos Proyectados</p>
+                    <p className="text-2xl font-black">
+                      ${presupuestoDetallado
+                          .filter(p => p.tipo === 'ingreso' || p.Tipo === 'ingreso')
+                          .reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0)
+                          .toLocaleString()}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase opacity-60">Gastos Totales</p>
-                    <p className="text-2xl font-black text-red-300">${presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0).toLocaleString()}</p>
+                    <p className="text-[10px] uppercase opacity-60">Gastos Proyectados</p>
+                    <p className="text-2xl font-black text-red-300">
+                      ${presupuestoDetallado
+                          .filter(p => p.tipo === 'gasto' || p.Tipo === 'gasto')
+                          .reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0)
+                          .toLocaleString()}
+                    </p>
                   </div>
                </div>
                <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-end">
                   <div>
                     <p className="text-[9px] uppercase opacity-60">Saldo Final Estimado</p>
                     <p className="text-3xl font-black italic text-yellow-400">
-                      ${(presupuestoDetallado.filter(p=>p.tipo==='ingreso' || !p.tipo).reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0) - 
-                         presupuestoDetallado.filter(p=>p.tipo==='gasto').reduce((s,it)=>s+Number(it.valor || it.Valor || 0),0)).toLocaleString()}
+                      ${(
+                          presupuestoDetallado
+                            .filter(p => p.tipo === 'ingreso' || p.Tipo === 'ingreso')
+                            .reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0) 
+                          - 
+                          presupuestoDetallado
+                            .filter(p => p.tipo === 'gasto' || p.Tipo === 'gasto')
+                            .reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0)
+                        ).toLocaleString()}
                     </p>
                   </div>
                   <button onClick={compartirPresupuestoWA} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl transition-all shadow-lg">
-                      💬  Compartir
+                      💬 Compartir
                   </button>
                </div>
             </div>
