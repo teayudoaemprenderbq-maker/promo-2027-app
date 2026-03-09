@@ -448,156 +448,128 @@ export default function App() {
         {tab === 'presupuesto' && (
   <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
     
-    {/* FORMULARIO AVANZADO DE PLANIFICACIÓN */}
-   <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
-  <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
-  
-  <div className="space-y-3">
-    {/* Concepto y Valor */}
-    <input type="text" placeholder="Concepto (Ej: Merienda)" className="w-full p-3 border rounded-xl text-sm"
-      value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
-    
-    <input type="number" placeholder="Valor Mensual $" className="w-full p-3 border rounded-xl text-sm font-bold"
-      value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
-
-    {/* Toggle: ¿Un mes o varios? */}
-    <div className="flex bg-gray-100 p-1 rounded-xl">
-      <button 
-        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
-        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
-        UN SOLO MES
-      </button>
-      <button 
-        onClick={() => setFormPresupuesto({...formPresupuesto, esRango: true})}
-        className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
-        RANGO DE MESES
-      </button>
-    </div>
-
-    {/* Selectores de Meses */}
-    <div className="grid grid-cols-2 gap-2">
-      <div className="flex flex-col">
-        <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">{formPresupuesto.esRango ? 'Desde' : 'Mes'}</label>
-        <select className="p-3 border rounded-xl text-sm bg-gray-50"
-          value={formPresupuesto.mesInicio} onChange={e => setFormPresupuesto({...formPresupuesto, mesInicio: parseInt(e.target.value)})}>
-          {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-        </select>
-      </div>
-
-      {formPresupuesto.esRango && (
-        <div className="flex flex-col">
-          <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">Hasta</label>
-          <select className="p-3 border rounded-xl text-sm bg-gray-50"
-            value={formPresupuesto.mesFin} onChange={e => setFormPresupuesto({...formPresupuesto, mesFin: parseInt(e.target.value)})}>
-            {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+    {/* FORMULARIO DE PROGRAMACIÓN */}
+    <div className="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-900">
+      <h2 className="text-xs font-black text-blue-900 uppercase mb-4 italic text-center">Programador de Presupuesto</h2>
+      
+      <div className="space-y-3">
+        <input type="text" placeholder="Concepto (Ej: Merienda o Venta Rifas)" className="w-full p-3 border rounded-xl text-sm"
+          value={formPresupuesto.concepto} onChange={e => setFormPresupuesto({...formPresupuesto, concepto: e.target.value})} />
+        
+        <div className="grid grid-cols-2 gap-2">
+          <input type="number" placeholder="Valor $" className="w-full p-3 border rounded-xl text-sm font-bold"
+            value={formPresupuesto.valor} onChange={e => setFormPresupuesto({...formPresupuesto, valor: e.target.value})} />
+          
+          <select className="p-3 border rounded-xl text-sm bg-gray-50 font-bold"
+            value={formPresupuesto.tipo} onChange={e => setFormPresupuesto({...formPresupuesto, tipo: e.target.value})}>
+            <option value="ingreso">🟢 Ingreso</option>
+            <option value="gasto">🔴 Gasto</option>
           </select>
         </div>
-      )}
+
+        <div className="flex bg-gray-100 p-1 rounded-xl">
+          <button onClick={() => setFormPresupuesto({...formPresupuesto, esRango: false})}
+            className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${!formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+            UN SOLO MES
+          </button>
+          <button onClick={() => setFormPresupuesto({...formPresupuesto, esRango: true})}
+            className={`flex-1 py-2 text-[10px] font-black rounded-lg transition ${formPresupuesto.esRango ? 'bg-white shadow-sm text-blue-900' : 'text-gray-400'}`}>
+            RANGO DE MESES
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col">
+            <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">{formPresupuesto.esRango ? 'Desde' : 'Mes'}</label>
+            <select className="p-3 border rounded-xl text-sm bg-gray-50"
+              value={formPresupuesto.mesInicio} onChange={e => setFormPresupuesto({...formPresupuesto, mesInicio: parseInt(e.target.value)})}>
+              {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+          {formPresupuesto.esRango && (
+            <div className="flex flex-col">
+              <label className="text-[9px] font-bold text-gray-400 ml-1 uppercase">Hasta</label>
+              <select className="p-3 border rounded-xl text-sm bg-gray-50"
+                value={formPresupuesto.mesFin} onChange={e => setFormPresupuesto({...formPresupuesto, mesFin: parseInt(e.target.value)})}>
+                {mesesNombres.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <button onClick={async () => {
+            if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
+            setLoading(true);
+            try {
+              const inicio = formPresupuesto.mesInicio;
+              const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
+              for(let m = inicio; m <= fin; m++) {
+                await postData('addPresupuesto', {
+                  concepto: formPresupuesto.concepto,
+                  valor: Number(formPresupuesto.valor),
+                  tipo: formPresupuesto.tipo,
+                  mes: m,
+                  anio: anioVista
+                });
+              }
+              alert("Presupuesto actualizado correctamente");
+              await cargarTodo();
+            } catch (e) { alert("Error al conectar con la base de datos"); }
+            setLoading(false);
+          }} className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-lg active:scale-95 transition-all">
+          {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
+        </button>
+      </div>
     </div>
 
-    {/* Botón de Acción con Bucle */}
-    <button 
-      onClick={async () => {
-        if(!formPresupuesto.concepto || !formPresupuesto.valor) return alert("Faltan datos");
-        if(formPresupuesto.esRango && formPresupuesto.mesFin < formPresupuesto.mesInicio) return alert("El mes de fin debe ser mayor al de inicio");
-        
-        setLoading(true);
-        try {
-          const inicio = formPresupuesto.mesInicio;
-          const fin = formPresupuesto.esRango ? formPresupuesto.mesFin : inicio;
-          
-          for(let m = inicio; m <= fin; m++) {
-            await postData('addPresupuesto', {
-              concepto: formPresupuesto.concepto,
-              valor: formPresupuesto.valor,
-              tipo: formPresupuesto.tipo,
-              mes: m,
-              anio: anioVista
-            });
-          }
-          alert(`Éxito: Se registraron ${fin - inicio + 1} meses.`);
-          await cargarTodo();
-        } catch (e) { alert("Error en la carga masiva"); }
-        setLoading(false);
-      }} 
-      className="w-full py-4 bg-blue-900 text-white rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all"
-    >
-      {formPresupuesto.esRango ? 'Generar Programación' : 'Añadir al Presupuesto'}
-    </button>
-  </div>
-</div>
-    {/* TABLA DE PRESUPUESTO GENERAL (Línea de Tiempo) */}
-    <div className="bg-white rounded-2xl shadow-xl border overflow-hidden">
-      <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
-        <h3 className="text-[10px] font-black uppercase tracking-widest">Presupuesto General: Ingresos vs Gastos</h3>
-        <div className="flex gap-2">
-           <button onClick={() => setAnioVista(2026)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2026 ? 'bg-blue-600' : 'bg-gray-700'}`}>2026</button>
-           <button onClick={() => setAnioVista(2027)} className={`px-3 py-1 rounded text-[9px] font-bold ${anioVista === 2027 ? 'bg-blue-600' : 'bg-gray-700'}`}>2027</button>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-[10px] text-left">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="p-3 font-black uppercase text-gray-500">Actividad / Concepto</th>
-              {mesesNombres.map(m => <th key={m} className="p-2 text-center border-l text-[8px]">{m.substring(0,3)}</th>)}
-              <th className="p-3 text-right bg-gray-200">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {/* Agrupamos presupuesto por concepto para mostrar filas únicas */}
-            {[...new Set(presupuestoDetallado.map(p => p.concepto))].map(concepto => {
-              const items = presupuestoDetallado.filter(p => p.concepto === concepto && Number(p.anio) === anioVista);
-              if (items.length === 0) return null;
-              const esIngreso = items[0].tipo === 'ingreso';
-              
-              return (
-                <tr key={concepto} className="hover:bg-gray-50">
-                  <td className="p-3 font-bold flex items-center gap-1">
-                    {esIngreso ? '🟢' : '🔴'} {concepto}
-                  </td>
-                  {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                    const mesData = items.find(it => Number(it.mes) === m);
-                    return (
-                      <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50' : 'bg-red-50') : ''}`}>
-                        {mesData ? `$${(Number(mesData.valor)/1000).toFixed(0)}k` : '-'}
-                      </td>
-                    );
-                  })}
-                  <td className="p-3 text-right font-black bg-gray-50">
-                    ${items.reduce((s, it) => s + Number(it.valor), 0).toLocaleString()}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot className="bg-blue-900 text-white font-black">
-            <tr>
-              <td className="p-3 uppercase">Diferencia Mensual</td>
-              {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                const mesItems = presupuestoDetallado.filter(p => Number(p.mes) === m && Number(p.anio) === anioVista);
-                const sumI = mesItems.filter(p => p.tipo === 'ingreso').reduce((s, it) => s + Number(it.valor), 0);
-                const sumG = mesItems.filter(p => p.tipo === 'gasto').reduce((s, it) => s + Number(it.valor), 0);
-                const diff = sumI - sumG;
+    {/* TABLA DINÁMICA SIN ERRORES DE NaN */}
+    <div className="bg-white rounded-2xl shadow-xl border overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        <thead className="bg-gray-900 text-white text-[10px] uppercase">
+          <tr>
+            <th className="p-3 border-r border-gray-700">Concepto / Actividad</th>
+            {mesesNombres.map(m => <th key={m} className="p-2 text-center border-r border-gray-700">{m.slice(0,3)}</th>)}
+          </tr>
+        </thead>
+        <tbody className="text-[10px]">
+          {/* Aquí mapeamos los conceptos únicos para crear las filas */}
+          {[...new Set(presupuestoDetallado.map(p => p.concepto || p.Concepto))].map((concepto, idx) => (
+            <tr key={idx} className="border-b hover:bg-gray-50">
+              <td className="p-3 font-bold text-gray-700 uppercase bg-gray-50 border-r">{concepto}</td>
+              {Array.from({length: 12}).map((_, i) => {
+                const item = presupuestoDetallado.find(p => (p.concepto === concepto || p.Concepto === concepto) && Number(p.mes) === (i + 1) && Number(p.anio) === anioVista);
+                const valorLimpiado = item ? Number(item.valor || item.Valor || 0) : 0;
                 return (
-                  <td key={m} className={`p-2 text-center border-l text-[8px] ${diff < 0 ? 'text-red-300' : 'text-green-300'}`}>
-                    {diff !== 0 ? `${diff > 0 ? '+' : ''}${(diff/1000).toFixed(0)}k` : '-'}
+                  <td key={i} className={`p-2 text-center border-r ${item?.tipo === 'gasto' ? 'text-red-500' : 'text-green-600'} font-bold`}>
+                    {valorLimpiado > 0 ? `$${(valorLimpiado/1000).toFixed(0)}k` : '-'}
                   </td>
                 );
               })}
-              <td className="p-3 text-right bg-blue-800">
-                {(() => {
-                  const tI = presupuestoDetallado.filter(p => p.tipo === 'ingreso' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
-                  const tG = presupuestoDetallado.filter(p => p.tipo === 'gasto' && Number(p.anio) === anioVista).reduce((s, it) => s + Number(it.valor), 0);
-                  return `$${(tI - tG).toLocaleString()}`;
-                })()}
-              </td>
             </tr>
-          </tfoot>
-        </table>
-      </div>
+          ))}
+        </tbody>
+        <tfoot className="bg-blue-50 font-black text-blue-900">
+          <tr>
+            <td className="p-3 border-r uppercase">Diferencia Mensual</td>
+            {Array.from({length: 12}).map((_, i) => {
+              const totalMes = presupuestoDetallado
+                .filter(p => Number(p.mes) === (i + 1) && Number(p.anio) === anioVista)
+                .reduce((acc, curr) => {
+                  const v = Number(curr.valor || curr.Valor || 0);
+                  return curr.tipo === 'gasto' ? acc - v : acc + v;
+                }, 0);
+              return (
+                <td key={i} className={`p-2 text-center border-r ${totalMes < 0 ? 'text-red-600' : 'text-blue-700'}`}>
+                  ${(totalMes/1000).toFixed(0)}k
+                </td>
+              );
+            })}
+          </tr>
+        </tfoot>
+      </table>
     </div>
+  </div>
+)}
 
     {/* RESUMEN FINAL DE LA META 2026-2027 */}
     <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-3xl text-white shadow-2xl">
