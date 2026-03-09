@@ -78,7 +78,24 @@ export default function App() {
   useEffect(() => {
     cargarTodo();
   }, []);
+const eliminarConceptoPresupuesto = async (concepto, tipo) => {
+    const confirmacion = window.confirm(`¿Seguro que quieres borrar TODO el presupuesto de "${concepto}" para el año ${anioVista}?`);
+    if (!confirmacion) return;
 
+    setLoading(true);
+    try {
+      await postData('deletePresupuesto', { 
+        concepto, 
+        tipo, 
+        anio: anioVista 
+      });
+      alert("Registro eliminado con éxito.");
+      await cargarTodo(); // Esto refresca la tabla automáticamente
+    } catch (e) {
+      alert("Error al intentar eliminar.");
+    }
+    setLoading(false);
+  };
   // --- FUNCIONES DE EXPORTACIÓN Y COMPARTIR ---
   const exportarExcel = () => {
     let data = [];
@@ -540,41 +557,47 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {/* MODIFICACIÓN: Agrupar por la combinación de Concepto y Tipo */}
-                    {[...new Set(presupuestoDetallado.map(p => `${p.concepto || p.Concepto}|${p.tipo || 'ingreso'}`))].map(key => {
-                      const [concepto, tipo] = key.split('|');
-                      
-                      const items = presupuestoDetallado.filter(p => 
-                        (p.concepto === concepto || p.Concepto === concepto) && 
-                        (p.tipo === tipo || (!p.tipo && tipo === 'ingreso')) && // Manejar casos donde tipo no esté definido (legacy data)
-                        Number(p.anio) === anioVista
-                      );
-                      
-                      if (items.length === 0) return null;
-                      
-                      const esIngreso = tipo === 'ingreso';
+  {[...new Set(presupuestoDetallado.map(p => `${p.concepto || p.Concepto}|${p.tipo || 'ingreso'}`))].map(key => {
+    const [concepto, tipo] = key.split('|');
+    const items = presupuestoDetallado.filter(p => 
+      (p.concepto === concepto || p.Concepto === concepto) && 
+      (p.tipo === tipo) && 
+      Number(p.anio) === anioVista
+    );
+    
+    if (items.length === 0) return null;
+    const esIngreso = tipo === 'ingreso';
 
-                      return (
-                        <tr key={key} className="hover:bg-gray-50">
-                          <td className="p-3 font-bold flex items-center gap-1">
-                            {esIngreso ? ' 🟢 ' : ' 🔴 '} {concepto}
-                          </td>
-                          {Array.from({length: 12}, (_, i) => i + 1).map(m => {
-                            const mesData = items.find(it => Number(it.mes) === m);
-                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
-                            return (
-                              <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700') : ''}`}>
-                                {val > 0 ? `$${(val/1000).toFixed(0)}k` : '-'}
-                              </td>
-                            );
-                          })}
-                          <td className="p-3 text-right font-black bg-gray-50">
-                            ${items.reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0).toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
+    return (
+      <tr key={key} className="hover:bg-gray-50 group">
+        <td className="p-3 font-bold sticky left-0 bg-white border-r">
+          <div className="flex items-center justify-between">
+            <span>{esIngreso ? '🟢' : '🔴'} {concepto}</span>
+            {/* AQUÍ ESTÁ EL BOTÓN DE LA BASURA */}
+            <button 
+              onClick={() => eliminarConceptoPresupuesto(concepto, tipo)}
+              className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-md transition-all"
+            >
+              🗑️
+            </button>
+          </div>
+        </td>
+        {Array.from({length: 12}, (_, i) => i + 1).map(m => {
+          const mesData = items.find(it => Number(it.mes) === m);
+          const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
+          return (
+            <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700') : ''}`}>
+              {val > 0 ? `$${(val/1000).toFixed(0)}k` : '-'}
+            </td>
+          );
+        })}
+        <td className="p-3 text-right font-black bg-gray-50">
+          ${items.reduce((s, it) => s + Number(it.valor || it.Valor || 0), 0).toLocaleString()}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
                   <tfoot className="bg-blue-900 text-white font-black">
                     <tr>
                       <td className="p-3 uppercase">Diferencia Mensual</td>
