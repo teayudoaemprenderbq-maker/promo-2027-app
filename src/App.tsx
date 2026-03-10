@@ -395,18 +395,18 @@ export default function App() {
         {tab === 'libro' && (
           <div className="space-y-4 mt-2 max-w-md mx-auto animate-fadeIn">
             
-            {/* CARD DE SALDO TOTAL */}
+            {/* SALDO REAL - Suma ingresos y resta gastos buscando Valor o valor */}
             <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl text-center border-b-4 border-blue-700">
               <p className="text-[10px] opacity-70 uppercase font-black tracking-widest mb-1">Saldo Real en Caja</p>
               <h3 className="text-4xl font-black italic">
                 ${(
-                  ingresos.reduce((s, i) => s + Number(i.valor || i.Valor || 0), 0) - 
-                  gastos.reduce((s, g) => s + Number(g.valor || g.Valor || 0), 0)
+                  ingresos.reduce((s, i) => s + Number(i.valor || i.Valor || i.VALOR || 0), 0) - 
+                  gastos.reduce((s, g) => s + Number(g.valor || g.Valor || g.VALOR || 0), 0)
                 ).toLocaleString('es-CO')}
               </h3>
             </div>
 
-            {/* TABLA DE MOVIMIENTOS */}
+            {/* TABLA DE HISTORIAL */}
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden mt-6">
               <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
                 <h3 className="font-black text-blue-900 uppercase text-xs italic">Últimos Movimientos Registrados</h3>
@@ -415,42 +415,40 @@ export default function App() {
                 <table className="w-full text-left">
                   <tbody className="divide-y">
                     {[...ingresos, ...gastos]
-                      .sort((a, b) => new Date(b.fecha || b.Fecha).getTime() - new Date(a.fecha || a.Fecha).getTime())
-                      .slice(0, 30)
+                      .sort((a, b) => {
+                        const dateA = new Date(a.fecha || a.Fecha || 0).getTime();
+                        const dateB = new Date(b.fecha || b.Fecha || 0).getTime();
+                        return dateB - dateA;
+                      })
+                      .slice(0, 40) // Mostramos 40 para asegurar que veas datos
                       .map((mov, i) => {
-                        // Extraemos datos con validación de mayúsculas/minúsculas
-                        const val = Number(mov.valor || mov.Valor || 0);
-                        const fechaRaw = mov.fecha || mov.Fecha;
-                        const esAporte = !!(mov.estudiante || mov.Estudiante);
-                        const nombrePersona = mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || "Movimiento";
-                        const concepto = mov.concepto || mov.Concepto || (esAporte ? "Aporte" : "Gasto");
+                        // EXTRACCIÓN BLINDADA DE DATOS (Busca todas las variantes de nombres de columna)
+                        const valor = Number(mov.valor || mov.Valor || mov.VALOR || 0);
+                        const fecha = mov.fecha || mov.Fecha || mov.FECHA;
+                        const esAporte = (mov.estudiante || mov.Estudiante || mov.ESTUDIANTE);
+                        const nombre = mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || mov.concepto || mov.Concepto || "Movimiento";
+                        const detalle = mov.concepto || mov.Concepto || (esAporte ? "Aporte Estudiante" : "Gasto General");
                         const link = mov.fotoUrl || mov.foto_url || mov.soporte || mov.soporte_url || mov.Soporte || "";
-                        const tieneSoporte = typeof link === 'string' && link.startsWith('http');
-
+                        
                         return (
                           <tr key={i} className="hover:bg-blue-50/50 transition-colors">
                             <td className="p-3">
                               <div className="text-[9px] font-bold text-gray-400">
-                                {fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : '--/--'}
+                                {fecha ? new Date(fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : '--/--'}
                               </div>
-                              <div className="font-black uppercase text-blue-900 truncate max-w-[120px]">
-                                {nombrePersona}
+                              <div className="font-black uppercase text-blue-900 truncate max-w-[130px]">
+                                {nombre}
                               </div>
                             </td>
                             <td className="p-3 text-gray-500 italic uppercase text-[9px]">
-                              {concepto}
+                              {detalle}
                             </td>
                             <td className={`p-3 text-right font-black ${esAporte ? 'text-green-600' : 'text-red-600'}`}>
-                              {esAporte ? '+' : '-'}{val.toLocaleString()}
+                              {esAporte ? '+' : '-'}{valor.toLocaleString()}
                             </td>
                             <td className="p-3 text-center">
-                              {tieneSoporte ? (
-                                <a
-                                  href={link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                                >
+                              {typeof link === 'string' && link.startsWith('http') ? (
+                                <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
                                   <span style={{ fontSize: '14px' }}> 🖼️ </span>
                                 </a>
                               ) : (
@@ -463,12 +461,6 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
-              {/* Si no hay datos, mostrar mensaje */}
-              {[...ingresos, ...gastos].length === 0 && (
-                <div className="p-10 text-center text-gray-400 italic text-sm">
-                  No se encontraron movimientos grabados.
-                </div>
-              )}
             </div>
           </div>
         )}
