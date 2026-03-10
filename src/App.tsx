@@ -423,10 +423,10 @@ export default function App() {
                               <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
                                 {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
                               </td>
-                            );
+                           );
                           })}
                         </tr>
-                      );
+                      ) // 
                     })}
                   </tbody>
                 </table>
