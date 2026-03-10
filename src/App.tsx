@@ -413,31 +413,38 @@ export default function App() {
                                 title="Eliminar"
                               >
                                 🗑️
-                                </button>
-                              </div> {/* ESTO ES LO QUE FALTABA: Cierre del div */}
-                            </td> {/* ESTO ES LO QUE FALTABA: Cierre del td */}
-                            
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
-                              const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
-                              const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
-                              return (
-                                <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
-                                  {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        )
-                      })}
+                              </button>
+                            </div>
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                            const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
+                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
+                            return (
+                              <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
+                                {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
-            <tbody className="divide-y">
-                  {[...ingresos, ...gastos]
-                    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-                    .slice(0, 30)
-                    .map((mov, i) => {
+
+            {/* SECCIÓN DE ÚLTIMOS MOVIMIENTOS - CORREGIDA Y FUERA DE LA TABLA ANTERIOR */}
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden mt-6">
+              <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <h3 className="font-black text-blue-900 uppercase text-xs italic">Últimos Movimientos Registrados</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <tbody className="divide-y">
+                    {[...ingresos, ...gastos]
+                      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                      .slice(0, 30)
+                      .map((mov, i) => {
                       const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
                       const tieneSoporte = typeof link === 'string' && link.startsWith('http');
                       const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
