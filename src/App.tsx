@@ -98,24 +98,7 @@ export default function App() {
   useEffect(() => {
     cargarTodo();
   }, []);
-const eliminarConceptoPresupuesto = async (concepto, tipo) => {
-    const confirmacion = window.confirm(`¿Seguro que quieres borrar TODO el presupuesto de "${concepto}" para el año ${anioVista}?`);
-    if (!confirmacion) return;
 
-    setLoading(true);
-    try {
-      await postData('deletePresupuesto', { 
-        concepto, 
-        tipo, 
-        anio: anioVista 
-      });
-      alert("Registro eliminado con éxito.");
-      await cargarTodo(); // Esto refresca la tabla automáticamente
-    } catch (e) {
-      alert("Error al intentar eliminar.");
-    }
-    setLoading(false);
-  };
   // --- FUNCIONES DE EXPORTACIÓN Y COMPARTIR ---
   const exportarExcel = () => {
     let data = [];
