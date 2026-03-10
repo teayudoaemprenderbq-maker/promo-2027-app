@@ -414,7 +414,8 @@ export default function App() {
     >
       🗑️
     </button>
-  </tr>          
+ </div> {/* Primero cierras el div */}
+    </td> {/* Luego cierras la celda td */}        
                 </thead>
                 <tbody className="divide-y">
                   {[...ingresos, ...gastos]
