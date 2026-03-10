@@ -54,6 +54,26 @@ export default function App() {
     fileName: '',
     fileBase64: ''
   });
+  const eliminarConceptoPresupuesto = async (concepto, tipo) => {
+    const confirmacion = window.confirm(`¿Estás seguro de eliminar "${concepto}"?`);
+    if (!confirmacion) return;
+
+    setLoading(true);
+    try {
+      // Esta es la orden que viaja al Excel
+      await postData('deletePresupuesto', { 
+        concepto: concepto, 
+        tipo: tipo, 
+        anio: Number(anioVista) 
+      });
+      
+      alert("Eliminado correctamente");
+      await cargarTodo(); // Esto hace que la tabla se actualice sola
+    } catch (e) {
+      alert("Error al eliminar");
+    }
+    setLoading(false);
+  };
 
   // --- CARGA DE DATOS ---
   const cargarTodo = async () => {
@@ -573,10 +593,11 @@ const eliminarConceptoPresupuesto = async (concepto, tipo) => {
         <td className="p-3 font-bold sticky left-0 bg-white border-r">
           <div className="flex items-center justify-between">
             <span>{esIngreso ? '🟢' : '🔴'} {concepto}</span>
-            {/* AQUÍ ESTÁ EL BOTÓN DE LA BASURA */}
+            {/* BOTÓN DE ELIMINAR */}
             <button 
               onClick={() => eliminarConceptoPresupuesto(concepto, tipo)}
-              className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-md transition-all"
+              className="text-red-500 hover:bg-red-100 p-1 rounded transition-all"
+              title="Eliminar"
             >
               🗑️
             </button>
@@ -586,7 +607,7 @@ const eliminarConceptoPresupuesto = async (concepto, tipo) => {
           const mesData = items.find(it => Number(it.mes) === m);
           const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
           return (
-            <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700') : ''}`}>
+            <td key={m} className={`p-2 text-center border-l ${mesData ? (esIngreso ? 'bg-green-50' : 'bg-red-50') : ''}`}>
               {val > 0 ? `$${(val/1000).toFixed(0)}k` : '-'}
             </td>
           );
