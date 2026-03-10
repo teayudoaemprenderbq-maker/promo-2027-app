@@ -413,21 +413,22 @@ export default function App() {
                                 title="Eliminar"
                               >
                                 🗑️
-                              </button>
-                            </div>
-                          </td>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
-                            const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
-                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
-                            return (
-                              <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
-                                {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
-                              </td>
-                           );
-                          })}
-                        </tr>
-                      ) // 
-                    })}
+                                </button>
+                              </div> {/* ESTO ES LO QUE FALTABA: Cierre del div */}
+                            </td> {/* ESTO ES LO QUE FALTABA: Cierre del td */}
+                            
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                              const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
+                              const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
+                              return (
+                                <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
+                                  {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        )
+                      })}
                   </tbody>
                 </table>
               </div>
