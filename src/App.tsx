@@ -415,19 +415,34 @@ export default function App() {
                       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
                       .slice(0, 30)
                       .map((mov, i) => {
-                        const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
-                        const tieneSoporte = typeof link === 'string' && link.startsWith('http');
-                        const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
-                        return (
-                          <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-                            <td className="p-3">
-                              <div className="text-[9px] font-bold text-gray-400">
-                                {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
-                              </div>
-                              <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
-                                {mov.estudiante ? mov.estudiante : (mov.descripcion || mov.concepto)}
-                              </div>
-                            </td>
+  // 1. CORRECCIÓN DE URL (Busca en todas las variantes posibles de la columna)
+  const link = mov.fotoUrl || mov.foto_url || mov.soporte || mov.soporte_url || mov.Soporte || "";
+  
+  const tieneSoporte = typeof link === 'string' && link.startsWith('http');
+
+  // 2. CORRECCIÓN DE CONCEPTO (Busca si es aporte de estudiante o gasto general)
+  const conceptoMuestra = mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || mov.concepto || mov.Concepto || "Sin concepto";
+
+  // 3. CORRECCIÓN DE VALOR (Asegura que reconozca la columna aunque cambie la mayúscula)
+  const valorNumerico = Number(mov.valor || mov.Valor || 0);
+
+  return (
+    <tr key={i} className="hover:bg-blue-50/50 transition-colors">
+      <td className="p-3">
+        <div className="text-[9px] font-bold text-gray-400">
+          {/* 4. CORRECCIÓN DE FECHA */}
+          {new Date(mov.fecha || mov.Fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
+        </div>
+        <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
+          {mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || "Movimiento"}
+        </div>
+      </td>
+      <td className="p-3 text-gray-500 italic uppercase text-[9px]">
+        {conceptoMuestra}
+      </td>
+      <td className={`p-3 text-right font-black ${(mov.estudiante || mov.Estudiante) ? 'text-green-600' : 'text-red-600'}`}>
+        {(mov.estudiante || mov.Estudiante) ? '+' : '-'}{valorNumerico.toLocaleString()}
+      </td>
                             <td className="p-3 text-gray-500 italic uppercase text-[9px]">
                               {conceptoMuestra}
                             </td>
