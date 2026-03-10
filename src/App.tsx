@@ -401,21 +401,37 @@ export default function App() {
               </h3>
             </div>
 
-          <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
-  <div className="flex items-center justify-between w-full group">
-    <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
-    <button 
-      onClick={(e) => {
-        e.stopPropagation(); 
-        eliminarConceptoPresupuesto(concepto, tipo);
-      }}
-      className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-      title="Eliminar"
-    >
-      🗑️
-    </button>
- </div> 
-    </td>        
+         <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
+                            <div className="flex items-center justify-between w-full group">
+                              <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation(); 
+                                  eliminarConceptoPresupuesto(concepto, tipo);
+                                }}
+                                className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+                                title="Eliminar"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                            const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
+                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
+                            return (
+                              <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
+                                {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
             <tbody className="divide-y">
                   {[...ingresos, ...gastos]
                     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
