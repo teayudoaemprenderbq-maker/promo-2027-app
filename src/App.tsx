@@ -414,8 +414,7 @@ export default function App() {
     >
       🗑️
     </button>
-  </div>
-</tr>          
+  </tr>          
                 </thead>
                 <tbody className="divide-y">
                   {[...ingresos, ...gastos]
