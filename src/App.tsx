@@ -394,6 +394,8 @@ export default function App() {
 
         {tab === 'libro' && (
           <div className="space-y-4 mt-2 max-w-md mx-auto animate-fadeIn">
+            
+            {/* 1. SALDO EN CAJA */}
             <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl text-center border-b-4 border-blue-700">
               <p className="text-[10px] opacity-70 uppercase font-black tracking-widest mb-1">Saldo Real en Caja</p>
               <h3 className="text-4xl font-black italic">
@@ -401,39 +403,7 @@ export default function App() {
               </h3>
             </div>
 
-         <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
-                            <div className="flex items-center justify-between w-full group">
-                              <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation(); 
-                                  eliminarConceptoPresupuesto(concepto, tipo);
-                                }}
-                                className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-                                title="Eliminar"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
-                            const mesData = its.find((it) => Number(it.mes || it.Mes) === m);
-                            const val = mesData ? Number(mesData.valor || mesData.Valor || 0) : 0;
-                            return (
-                              <td key={m} className={`p-4 text-center border-l text-[11px] font-bold ${val > 0 ? (isI ? 'text-green-600 bg-green-50/30' : 'text-red-600 bg-red-50/30') : 'text-gray-200'}`}>
-                                {val > 0 ? `${(val / 1000).toFixed(0)}k` : '-'}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* SECCIÓN DE ÚLTIMOS MOVIMIENTOS - CORREGIDA Y FUERA DE LA TABLA ANTERIOR */}
+            {/* 2. SECCIÓN DE ÚLTIMOS MOVIMIENTOS */}
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden mt-6">
               <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
                 <h3 className="font-black text-blue-900 uppercase text-xs italic">Últimos Movimientos Registrados</h3>
@@ -445,46 +415,47 @@ export default function App() {
                       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
                       .slice(0, 30)
                       .map((mov, i) => {
-                      const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
-                      const tieneSoporte = typeof link === 'string' && link.startsWith('http');
-                      const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
-
-                      return (
-                        <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-                          <td className="p-3">
-                            <div className="text-[9px] font-bold text-gray-400">
-                              {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
-                            </div>
-                            <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
-                              {mov.estudiante ? mov.estudiante : (mov.descripcion || mov.concepto)}
-                            </div>
-                          </td>
-                          <td className="p-3 text-gray-500 italic uppercase text-[9px]">
-                            {conceptoMuestra}
-                          </td>
-                          <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
-                            {mov.estudiante ? '+' : '-'}{Number(mov.valor || 0).toLocaleString()}
-                          </td>
-                          <td className="p-3 text-center">
-                            {tieneSoporte ? (
-                              <a 
-                                href={link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
-                              >
-                                <span style={{ fontSize: '14px' }}> 🖼️ </span>
-                              </a>
-                            ) : (
-                              <span className="text-gray-200 italic text-[18px]"> —</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+                        const link = mov.fotoUrl || mov.soporte || mov.soporte_url || "";
+                        const tieneSoporte = typeof link === 'string' && link.startsWith('http');
+                        const conceptoMuestra = mov.concepto || (mov.estudiante ? "Aporte" : "Gasto");
+                        return (
+                          <tr key={i} className="hover:bg-blue-50/50 transition-colors">
+                            <td className="p-3">
+                              <div className="text-[9px] font-bold text-gray-400">
+                                {new Date(mov.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
+                              </div>
+                              <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
+                                {mov.estudiante ? mov.estudiante : (mov.descripcion || mov.concepto)}
+                              </div>
+                            </td>
+                            <td className="p-3 text-gray-500 italic uppercase text-[9px]">
+                              {conceptoMuestra}
+                            </td>
+                            <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
+                              {mov.estudiante ? '+' : '-'}{Number(mov.valor || 0).toLocaleString()}
+                            </td>
+                            <td className="p-3 text-center">
+                              {tieneSoporte ? (
+                                <a
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                                >
+                                  <span style={{ fontSize: '14px' }}> 🖼️ </span>
+                                </a>
+                              ) : (
+                                <span className="text-gray-200 italic text-[18px]"> —</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
+            
           </div>
         )}
 
