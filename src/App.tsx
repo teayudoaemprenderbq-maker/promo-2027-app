@@ -414,10 +414,9 @@ export default function App() {
     >
       🗑️
     </button>
- </div> {/* Primero cierras el div */}
-    </td> {/* Luego cierras la celda td */}        
-                </thead>
-                <tbody className="divide-y">
+ </div> 
+    </td>        
+            <tbody className="divide-y">
                   {[...ingresos, ...gastos]
                     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
                     .slice(0, 30)
