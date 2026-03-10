@@ -401,23 +401,20 @@ export default function App() {
               </h3>
             </div>
 
-            <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
+          <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
   <div className="flex items-center justify-between w-full group">
-    <<div className="flex items-center justify-between w-full group">
-  <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
-  <button 
-    onClick={(e) => {
-      e.stopPropagation(); 
-      eliminarConceptoPresupuesto(concepto, tipo);
-    }}
-    className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-    title="Eliminar"
-  >
-    🗑️
-  </button>
-</div>
+    <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
     <button 
-       </div>
+      onClick={(e) => {
+        e.stopPropagation(); 
+        eliminarConceptoPresupuesto(concepto, tipo);
+      }}
+      className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+      title="Eliminar"
+    >
+      🗑️
+    </button>
+  </div>
 </td>
                 </thead>
                 <tbody className="divide-y">
