@@ -55,22 +55,23 @@ export default function App() {
     fileBase64: ''
   });
   const eliminarConceptoPresupuesto = async (concepto, tipo) => {
-    const confirmacion = window.confirm(`¿Estás seguro de eliminar "${concepto}"?`);
+    const confirmacion = window.confirm(`¿Seguro que quieres borrar "${concepto}"?`);
     if (!confirmacion) return;
 
     setLoading(true);
     try {
-      // Esta es la orden que viaja al Excel
+      // Enviamos exactamente lo que el script espera
       await postData('deletePresupuesto', { 
         concepto: concepto, 
         tipo: tipo, 
-        anio: Number(anioVista) 
+        anio: anioVista 
       });
       
-      alert("Eliminado correctamente");
-      await cargarTodo(); // Esto hace que la tabla se actualice sola
+      // Forzamos una recarga de datos para limpiar la pantalla
+      await cargarTodo(); 
+      alert("Eliminado con éxito");
     } catch (e) {
-      alert("Error al eliminar");
+      alert("Error al conectar con el servidor");
     }
     setLoading(false);
   };
@@ -578,12 +579,12 @@ export default function App() {
             <span>{esIngreso ? '🟢' : '🔴'} {concepto}</span>
             {/* BOTÓN DE ELIMINAR */}
             <button 
-              onClick={() => eliminarConceptoPresupuesto(concepto, tipo)}
-              className="text-red-500 hover:bg-red-100 p-1 rounded transition-all"
-              title="Eliminar"
-            >
-              🗑️
-            </button>
+  onClick={() => eliminarConceptoPresupuesto(concepto, tipo)}
+  className="ml-2 text-red-500 hover:text-red-700 p-1"
+  title="Eliminar"
+>
+  🗑️
+</button>
           </div>
         </td>
         {Array.from({length: 12}, (_, i) => i + 1).map(m => {
