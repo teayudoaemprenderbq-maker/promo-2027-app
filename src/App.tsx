@@ -416,6 +416,7 @@ export default function App() {
     </button>
   </div>
 </td>
+  </div>          
                 </thead>
                 <tbody className="divide-y">
                   {[...ingresos, ...gastos]
