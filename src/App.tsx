@@ -55,26 +55,25 @@ export default function App() {
     fileBase64: ''
   });
   const eliminarConceptoPresupuesto = async (concepto, tipo) => {
-    const confirmacion = window.confirm(`¿Seguro que quieres borrar "${concepto}"?`);
-    if (!confirmacion) return;
+  const confirmacion = window.confirm(`¿Seguro que quieres borrar "${concepto}"?`);
+  if (!confirmacion) return;
 
-    setLoading(true);
-    try {
-      // Enviamos exactamente lo que el script espera
-      await postData('deletePresupuesto', { 
-        concepto: concepto, 
-        tipo: tipo, 
-        anio: anioVista 
-      });
-      
-      // Forzamos una recarga de datos para limpiar la pantalla
-      await cargarTodo(); 
-      alert("Eliminado con éxito");
-    } catch (e) {
-      alert("Error al conectar con el servidor");
-    }
-    setLoading(false);
-  };
+  setLoading(true);
+  try {
+    // IMPORTANTE: Los nombres deben ser 'concepto', 'tipo' y 'anio'
+    await postData('deletePresupuesto', { 
+      concepto: concepto, 
+      tipo: tipo, 
+      anio: anioVista 
+    });
+    
+    await cargarTodo(); 
+    alert("Eliminado con éxito");
+  } catch (e) {
+    alert("Error al conectar con el servidor");
+  }
+  setLoading(false);
+};
 
   // --- CARGA DE DATOS ---
   const cargarTodo = async () => {
@@ -400,15 +399,22 @@ export default function App() {
               </h3>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-              <table className="w-full text-[10px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr className="text-[8px] uppercase font-black text-gray-400">
-                    <th className="p-3 text-left">Detalle</th>
-                    <th className="p-3 text-left">Concepto</th>
-                    <th className="p-3 text-right">Valor</th>
-                    <th className="p-3 text-center">Ver</th>
-                  </tr>
+            <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
+  <div className="flex items-center justify-between w-full group">
+    <span>
+      {esIngreso ? '🟢' : '🔴'} {concepto}
+    </span>
+    <button 
+      onClick={(e) => {
+        e.stopPropagation();
+        eliminarConceptoPresupuesto(concepto, tipo);
+      }}
+      className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+    >
+      🗑️
+    </button>
+  </div>
+</td>
                 </thead>
                 <tbody className="divide-y">
                   {[...ingresos, ...gastos]
