@@ -395,15 +395,18 @@ export default function App() {
         {tab === 'libro' && (
           <div className="space-y-4 mt-2 max-w-md mx-auto animate-fadeIn">
             
-            {/* 1. SALDO EN CAJA */}
+            {/* CARD DE SALDO TOTAL */}
             <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl text-center border-b-4 border-blue-700">
               <p className="text-[10px] opacity-70 uppercase font-black tracking-widest mb-1">Saldo Real en Caja</p>
               <h3 className="text-4xl font-black italic">
-                ${(ingresos.reduce((s,i)=>s+Number(i.valor || 0),0) - gastos.reduce((s,g)=>s+Number(g.valor || 0),0)).toLocaleString('es-CO')}
+                ${(
+                  ingresos.reduce((s, i) => s + Number(i.valor || i.Valor || 0), 0) - 
+                  gastos.reduce((s, g) => s + Number(g.valor || g.Valor || 0), 0)
+                ).toLocaleString('es-CO')}
               </h3>
             </div>
 
-            {/* 2. SECCIÓN DE ÚLTIMOS MOVIMIENTOS */}
+            {/* TABLA DE MOVIMIENTOS */}
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden mt-6">
               <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
                 <h3 className="font-black text-blue-900 uppercase text-xs italic">Últimos Movimientos Registrados</h3>
@@ -412,42 +415,33 @@ export default function App() {
                 <table className="w-full text-left">
                   <tbody className="divide-y">
                     {[...ingresos, ...gastos]
-                      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                      .sort((a, b) => new Date(b.fecha || b.Fecha).getTime() - new Date(a.fecha || a.Fecha).getTime())
                       .slice(0, 30)
                       .map((mov, i) => {
-  // 1. CORRECCIÓN DE URL (Busca en todas las variantes posibles de la columna)
-  const link = mov.fotoUrl || mov.foto_url || mov.soporte || mov.soporte_url || mov.Soporte || "";
-  
-  const tieneSoporte = typeof link === 'string' && link.startsWith('http');
+                        // Extraemos datos con validación de mayúsculas/minúsculas
+                        const val = Number(mov.valor || mov.Valor || 0);
+                        const fechaRaw = mov.fecha || mov.Fecha;
+                        const esAporte = !!(mov.estudiante || mov.Estudiante);
+                        const nombrePersona = mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || "Movimiento";
+                        const concepto = mov.concepto || mov.Concepto || (esAporte ? "Aporte" : "Gasto");
+                        const link = mov.fotoUrl || mov.foto_url || mov.soporte || mov.soporte_url || mov.Soporte || "";
+                        const tieneSoporte = typeof link === 'string' && link.startsWith('http');
 
-  // 2. CORRECCIÓN DE CONCEPTO (Busca si es aporte de estudiante o gasto general)
-  const conceptoMuestra = mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || mov.concepto || mov.Concepto || "Sin concepto";
-
-  // 3. CORRECCIÓN DE VALOR (Asegura que reconozca la columna aunque cambie la mayúscula)
-  const valorNumerico = Number(mov.valor || mov.Valor || 0);
-
-  return (
-    <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-      <td className="p-3">
-        <div className="text-[9px] font-bold text-gray-400">
-          {/* 4. CORRECCIÓN DE FECHA */}
-          {new Date(mov.fecha || mov.Fecha).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })}
-        </div>
-        <div className="font-black uppercase text-blue-900 truncate max-w-[100px]">
-          {mov.estudiante || mov.Estudiante || mov.descripcion || mov.Descripcion || "Movimiento"}
-        </div>
-      </td>
-      <td className="p-3 text-gray-500 italic uppercase text-[9px]">
-        {conceptoMuestra}
-      </td>
-      <td className={`p-3 text-right font-black ${(mov.estudiante || mov.Estudiante) ? 'text-green-600' : 'text-red-600'}`}>
-        {(mov.estudiante || mov.Estudiante) ? '+' : '-'}{valorNumerico.toLocaleString()}
-      </td>
-                            <td className="p-3 text-gray-500 italic uppercase text-[9px]">
-                              {conceptoMuestra}
+                        return (
+                          <tr key={i} className="hover:bg-blue-50/50 transition-colors">
+                            <td className="p-3">
+                              <div className="text-[9px] font-bold text-gray-400">
+                                {fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' }) : '--/--'}
+                              </div>
+                              <div className="font-black uppercase text-blue-900 truncate max-w-[120px]">
+                                {nombrePersona}
+                              </div>
                             </td>
-                            <td className={`p-3 text-right font-black ${mov.estudiante ? 'text-green-600' : 'text-red-600'}`}>
-                              {mov.estudiante ? '+' : '-'}{Number(mov.valor || 0).toLocaleString()}
+                            <td className="p-3 text-gray-500 italic uppercase text-[9px]">
+                              {concepto}
+                            </td>
+                            <td className={`p-3 text-right font-black ${esAporte ? 'text-green-600' : 'text-red-600'}`}>
+                              {esAporte ? '+' : '-'}{val.toLocaleString()}
                             </td>
                             <td className="p-3 text-center">
                               {tieneSoporte ? (
@@ -469,11 +463,15 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
+              {/* Si no hay datos, mostrar mensaje */}
+              {[...ingresos, ...gastos].length === 0 && (
+                <div className="p-10 text-center text-gray-400 italic text-sm">
+                  No se encontraron movimientos grabados.
+                </div>
+              )}
             </div>
-            
           </div>
         )}
-
         {tab === 'presupuesto' && (
           <div className="space-y-6 mt-2 animate-fadeIn max-w-4xl mx-auto">
 
