@@ -60,16 +60,18 @@ export default function App() {
 
   setLoading(true);
   try {
-    // IMPORTANTE: Los nombres deben ser 'concepto', 'tipo' y 'anio'
+    // IMPORTANTE: Estos son los nombres exactos que el Script de Google espera
     await postData('deletePresupuesto', { 
       concepto: concepto, 
       tipo: tipo, 
       anio: anioVista 
     });
     
+    // Recargamos los datos para que desaparezca de la pantalla
     await cargarTodo(); 
-    alert("Eliminado con éxito");
+    alert("Eliminado correctamente");
   } catch (e) {
+    console.error(e);
     alert("Error al conectar con el servidor");
   }
   setLoading(false);
@@ -401,19 +403,21 @@ export default function App() {
 
             <td className="p-3 font-bold sticky left-0 bg-white border-r min-w-[180px]">
   <div className="flex items-center justify-between w-full group">
-    <span>
-      {esIngreso ? '🟢' : '🔴'} {concepto}
-    </span>
+    <<div className="flex items-center justify-between w-full group">
+  <span className="truncate">{esIngreso ? '🟢' : '🔴'} {concepto}</span>
+  <button 
+    onClick={(e) => {
+      e.stopPropagation(); 
+      eliminarConceptoPresupuesto(concepto, tipo);
+    }}
+    className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
+    title="Eliminar"
+  >
+    🗑️
+  </button>
+</div>
     <button 
-      onClick={(e) => {
-        e.stopPropagation();
-        eliminarConceptoPresupuesto(concepto, tipo);
-      }}
-      className="ml-2 p-1 text-red-500 hover:bg-red-100 rounded-full transition-colors"
-    >
-      🗑️
-    </button>
-  </div>
+       </div>
 </td>
                 </thead>
                 <tbody className="divide-y">
